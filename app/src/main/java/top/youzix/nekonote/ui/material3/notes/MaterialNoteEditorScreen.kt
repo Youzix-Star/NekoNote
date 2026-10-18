@@ -7,6 +7,10 @@
 
 package top.youzix.nekonote.ui.material3.notes
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -57,9 +61,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontSynthesis
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
@@ -74,8 +79,10 @@ import top.youzix.nekonote.markdown.MarkdownEdit
 import top.youzix.nekonote.markdown.MarkdownHighlightColors
 import top.youzix.nekonote.markdown.MarkdownVisualTransformation
 import top.youzix.nekonote.ui.AppIcons
+import top.youzix.nekonote.ui.rememberBottomEdgeHaptic
 import top.youzix.nekonote.ui.material3.components.ExpressiveScaffold
 import top.youzix.nekonote.ui.material3.components.StatusTag
+import top.youzix.nekonote.ui.theme.NoteFonts
 
 /**
  * The editor, Material flavour: same borderless page and floating two-state icon pill as the
@@ -186,24 +193,36 @@ fun MaterialNoteEditorScreen(
     val tags = Markdown.parseTags(tagsText)
     val metaText = "${NoteDate.full(createdAt)} · ${Markdown.charCount(body.text)} 字"
 
+    val articleFamily = NoteFonts.of(AppState.noteFont)
     val titleStyle = MaterialTheme.typography.headlineSmall.copy(
         fontWeight = FontWeight.Bold,
+        fontFamily = articleFamily,
+        fontSynthesis = FontSynthesis.All,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
     val tagStyle = MaterialTheme.typography.labelLarge.copy(
+        fontFamily = articleFamily,
+        fontSynthesis = FontSynthesis.All,
         color = MaterialTheme.colorScheme.primary,
     )
-    val metaStyle = MaterialTheme.typography.labelSmall
+    val metaStyle = MaterialTheme.typography.labelSmall.copy(
+        fontFamily = articleFamily,
+        fontSynthesis = FontSynthesis.All,
+    )
     val bodyLineHeight = (AppState.editorTextSize.bodySp * 1.7f).sp
     val bodyLineHeightDp = with(LocalDensity.current) { bodyLineHeight.toDp() }
     val bodyScroll = rememberScrollState()
+    val bottomHaptic = rememberBottomEdgeHaptic()
     val bodyStyle = TextStyle(
-        fontFamily = FontFamily.Monospace,
+        fontFamily = articleFamily,
+        fontSynthesis = FontSynthesis.All,
         fontSize = AppState.editorTextSize.bodySp.sp,
         lineHeight = bodyLineHeight,
         color = MaterialTheme.colorScheme.onSurface,
     )
     val bodyPlaceholderStyle = MaterialTheme.typography.bodyMedium.copy(
+        fontFamily = articleFamily,
+        fontSynthesis = FontSynthesis.All,
         fontSize = AppState.editorTextSize.bodySp.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -236,8 +255,13 @@ fun MaterialNoteEditorScreen(
             )
         },
         bottomBar = {
-            // The formatting pill belongs to the keyboard: no keyboard, no rail.
-            if (!preview && keyboardVisible) {
+            // The formatting pill belongs to the keyboard: no keyboard, no rail. It fades while
+            // the keyboard inset slides it away, instead of staying opaque until the slide ends.
+            AnimatedVisibility(
+                visible = !preview && keyboardVisible,
+                enter = fadeIn(animationSpec = tween(durationMillis = 150)),
+                exit = fadeOut(animationSpec = tween(durationMillis = 150)),
+            ) {
                 FloatingFormatBar(
                     formatMode = formatMode,
                     onToggleFormatMode = { formatMode = !formatMode },
@@ -260,6 +284,7 @@ fun MaterialNoteEditorScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
+                        .nestedScroll(bottomHaptic)
                         .verticalScroll(rememberScrollState()),
                 ) {
                     Text(
@@ -365,6 +390,7 @@ fun MaterialNoteEditorScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
+                            .nestedScroll(bottomHaptic)
                             .verticalScroll(bodyScroll)
                             .padding(bottom = 8.dp),
                     ) {

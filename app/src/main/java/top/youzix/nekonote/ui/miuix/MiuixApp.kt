@@ -44,6 +44,7 @@ import top.youzix.nekonote.ui.AppIcons
 import top.youzix.nekonote.ui.UiEngine
 import top.youzix.nekonote.ui.UiEnginePrefs
 import top.youzix.nekonote.ui.miuix.about.AboutScreen
+import top.youzix.nekonote.ui.miuix.fonts.FontsScreen
 import top.youzix.nekonote.ui.miuix.licenses.LicensesScreen
 import top.youzix.nekonote.ui.miuix.liquid.FloatingBottomBar
 import top.youzix.nekonote.ui.miuix.notes.NoteEditorScreen
@@ -154,6 +155,7 @@ fun MiuixShell(
                     onNewNote = { navigator.push(Route.Editor(NoteRepository.newDraftId())) },
                     onOpenAbout = { navigator.push(Route.About) },
                     onOpenLicenses = { navigator.push(Route.Licenses) },
+                    onOpenFonts = { navigator.push(Route.Fonts) },
                     onTabSelected = { index -> mainPagerState.animateToPage(index) },
                 )
             }
@@ -165,6 +167,11 @@ fun MiuixShell(
                     onBack = { navigator.pop() },
                     onNotify = notify,
                 )
+            }
+
+            entry<Route.Fonts> {
+                LaunchedEffect(Unit) { CrashHandler.note("二级页面 字体") }
+                FontsScreen(onBack = { navigator.pop() })
             }
 
             entry<Route.About> {

@@ -21,6 +21,7 @@ sealed interface Route : NavKey {
     /** A note being edited. A draft id that has no note yet becomes one on the first keystroke. */
     data class Editor(val noteId: String) : Route
 
+    data object Fonts : Route
     data object About : Route
     data object Licenses : Route
 }

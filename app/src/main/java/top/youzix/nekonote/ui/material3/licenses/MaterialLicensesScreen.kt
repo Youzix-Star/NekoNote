@@ -62,6 +62,21 @@ fun MaterialLicensesScreen(onBack: () -> Unit, useBlur: Boolean) {
                 "AGPL-3.0",
                 "https://github.com/Youzix-Star/NekoPlus",
             ),
+            LicenseEntry(
+                "MiSans（小米）",
+                "免费商用字体许可",
+                "https://hyperos.mi.com/font/",
+            ),
+            LicenseEntry(
+                "HarmonyOS Sans（华为）",
+                "免费商用字体许可",
+                "https://developer.harmonyos.com/",
+            ),
+            LicenseEntry(
+                "Noto Sans SC",
+                "SIL Open Font License 1.1",
+                "https://github.com/notofonts/noto-cjk",
+            ),
             LicenseEntry("miuix", "Apache License 2.0", "https://github.com/compose-miuix-ui/miuix"),
             LicenseEntry(
                 "AndroidX / Jetpack Compose",

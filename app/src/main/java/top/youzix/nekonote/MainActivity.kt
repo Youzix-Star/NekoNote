@@ -31,6 +31,7 @@ class MainActivity : ComponentActivity() {
         AppState.colorMode = UiEnginePrefs.loadColorMode(this)
         AppState.debugMode = UiEnginePrefs.loadDebugMode(this)
         AppState.noteSort = NotePrefs.loadSort(this)
+        AppState.noteFont = NotePrefs.loadFont(this)
         AppState.editorTextSize = NotePrefs.loadTextSize(this)
         AppState.previewFirst = NotePrefs.loadPreviewFirst(this)
         setContent {

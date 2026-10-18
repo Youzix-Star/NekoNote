@@ -29,7 +29,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import top.youzix.nekonote.AppState
-import top.youzix.nekonote.data.EditorTextSize
 import top.youzix.nekonote.data.NotePrefs
 import top.youzix.nekonote.data.NoteRepository
 import top.youzix.nekonote.data.NoteSort
@@ -58,6 +57,7 @@ fun SettingsScreen(
     onEngineChange: (UiEngine) -> Unit,
     onOpenAbout: () -> Unit,
     onOpenLicenses: () -> Unit,
+    onOpenFonts: () -> Unit,
 ) {
     val scrollBehavior = MiuixScrollBehavior()
     Scaffold(
@@ -82,6 +82,7 @@ fun SettingsScreen(
             onEngineChange = onEngineChange,
             onOpenAbout = onOpenAbout,
             onOpenLicenses = onOpenLicenses,
+            onOpenFonts = onOpenFonts,
         )
     }
 }
@@ -94,11 +95,11 @@ private fun SettingsContent(
     onEngineChange: (UiEngine) -> Unit,
     onOpenAbout: () -> Unit,
     onOpenLicenses: () -> Unit,
+    onOpenFonts: () -> Unit,
 ) {
     val context = LocalContext.current
     val engineLabels = remember { UiEngine.entries.map { it.label } }
     val modeLabels = remember { ColorMode.entries.map { it.label } }
-    val sizeLabels = remember { EditorTextSize.entries.map { it.label } }
     val sortLabels = remember { NoteSort.entries.map { it.label } }
     val noteCount = NoteRepository.noteCount()
     val tagCount = NoteRepository.tags().size
@@ -146,18 +147,18 @@ private fun SettingsContent(
             Column {
                 SmallTitle(text = "编辑器")
                 Card(modifier = Modifier.fillMaxWidth()) {
-                    OverlayDropdownPreference(
-                        title = "字号",
-                        summary = "编辑和预览的正文字号",
-                        items = sizeLabels,
-                        selectedIndex = EditorTextSize.entries.indexOf(AppState.editorTextSize).coerceAtLeast(0),
-                        startAction = { Icon(AppIcons.Edit, null, Modifier.size(22.dp), colorScheme.onBackground) },
-                        onSelectedIndexChange = { index ->
-                            EditorTextSize.entries.getOrNull(index)?.let {
-                                AppState.editorTextSize = it
-                                NotePrefs.saveTextSize(context, it)
-                            }
+                    ArrowPreference(
+                        title = "字体与字号",
+                        summary = "${AppState.noteFont.label} · ${AppState.editorTextSize.label}",
+                        startAction = {
+                            Icon(
+                                AppIcons.TextFormat,
+                                null,
+                                Modifier.size(22.dp),
+                                colorScheme.onBackground,
+                            )
                         },
+                        onClick = onOpenFonts,
                     )
                     SwitchPreference(
                         title = "打开时先看预览",

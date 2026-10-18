@@ -31,7 +31,6 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import top.youzix.nekonote.AppState
-import top.youzix.nekonote.data.EditorTextSize
 import top.youzix.nekonote.data.NotePrefs
 import top.youzix.nekonote.data.NoteRepository
 import top.youzix.nekonote.data.NoteSort
@@ -54,6 +53,7 @@ fun MaterialSettingsScreen(
     onEngineChange: (UiEngine) -> Unit,
     onOpenAbout: () -> Unit,
     onOpenLicenses: () -> Unit,
+    onOpenFonts: () -> Unit,
 ) {
     val context = LocalContext.current
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -122,20 +122,14 @@ fun MaterialSettingsScreen(
                 title = "编辑器",
             ) {
                 item {
-                    SegmentedDropdownItem(
-                        icon = AppIcons.Edit,
-                        title = "字号",
-                        summary = "编辑和预览的正文字号",
-                        items = EditorTextSize.entries.map { it.label },
-                        selectedIndex = EditorTextSize.entries
-                            .indexOf(AppState.editorTextSize)
-                            .coerceAtLeast(0),
-                        onItemSelected = { index ->
-                            EditorTextSize.entries.getOrNull(index)?.let {
-                                AppState.editorTextSize = it
-                                NotePrefs.saveTextSize(context, it)
-                            }
+                    SegmentedListItem(
+                        onClick = onOpenFonts,
+                        headlineContent = { Text("字体与字号") },
+                        supportingContent = {
+                            Text("${AppState.noteFont.label} · ${AppState.editorTextSize.label}")
                         },
+                        leadingContent = { IconTile(AppIcons.TextFormat, "字体与字号") },
+                        trailingContent = { Icon(AppIcons.ChevronRight, null) },
                     )
                 }
                 item {

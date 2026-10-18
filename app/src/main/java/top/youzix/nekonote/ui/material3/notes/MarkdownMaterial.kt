@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontSynthesis
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -33,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import top.youzix.nekonote.AppState
 import top.youzix.nekonote.markdown.Markdown
 import top.youzix.nekonote.markdown.MdBlock
+import top.youzix.nekonote.ui.theme.NoteFonts
 
 /**
  * Draws a note's Markdown with the Material engine's type.
@@ -47,7 +49,10 @@ fun MaterialMarkdown(
     bodySize: Float = AppState.editorTextSize.bodySp,
 ) {
     val blocks = remember(markdown) { Markdown.parse(markdown) }
+    val family = NoteFonts.of(AppState.noteFont)
     val body = MaterialTheme.typography.bodyLarge.copy(
+        fontFamily = family,
+        fontSynthesis = FontSynthesis.All,
         fontSize = bodySize.sp,
         lineHeight = (bodySize * 1.7f).sp,
     )
@@ -71,15 +76,19 @@ fun MaterialMarkdown(
             when (block) {
                 is MdBlock.Heading -> Text(
                     text = annotated(block.text),
-                    fontSize = (bodySize + when (block.level) {
-                        1 -> 10f
-                        2 -> 6f
-                        3 -> 3f
-                        else -> 1f
-                    }).sp,
-                    fontWeight = FontWeight.SemiBold,
-                    lineHeight = (bodySize * 1.35f).sp,
-                    color = colorScheme.onBackground,
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontFamily = family,
+                        fontSynthesis = FontSynthesis.All,
+                        fontSize = (bodySize + when (block.level) {
+                            1 -> 10f
+                            2 -> 6f
+                            3 -> 3f
+                            else -> 1f
+                        }).sp,
+                        fontWeight = FontWeight.SemiBold,
+                        lineHeight = (bodySize * 1.35f).sp,
+                        color = colorScheme.onBackground,
+                    ),
                     modifier = Modifier.padding(top = if (block.level <= 2) 8.dp else 2.dp),
                 )
 

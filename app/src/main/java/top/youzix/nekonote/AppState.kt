@@ -9,6 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import top.youzix.nekonote.data.EditorTextSize
+import top.youzix.nekonote.data.NoteFont
 import top.youzix.nekonote.data.NoteSort
 import top.youzix.nekonote.ui.UiEngine
 import top.youzix.nekonote.ui.theme.ColorMode
@@ -41,6 +42,9 @@ object AppState {
 
     /** The order of the note list below the pinned notes; persisted via NotePrefs. */
     var noteSort by mutableStateOf(NoteSort.Updated)
+
+    /** The article typeface; persisted via NotePrefs. */
+    var noteFont by mutableStateOf(NoteFont.System)
 
     /** The editor's body size; persisted via NotePrefs. */
     var editorTextSize by mutableStateOf(EditorTextSize.Normal)

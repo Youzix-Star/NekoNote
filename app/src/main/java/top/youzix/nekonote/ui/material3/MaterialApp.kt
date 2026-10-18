@@ -47,6 +47,7 @@ import top.youzix.nekonote.data.NoteRepository
 import top.youzix.nekonote.ui.UiEngine
 import top.youzix.nekonote.ui.UiEnginePrefs
 import top.youzix.nekonote.ui.material3.about.MaterialAboutScreen
+import top.youzix.nekonote.ui.material3.fonts.MaterialFontsScreen
 import top.youzix.nekonote.ui.material3.licenses.MaterialLicensesScreen
 import top.youzix.nekonote.ui.material3.notes.MaterialNoteEditorScreen
 import top.youzix.nekonote.ui.material3.notes.MaterialNotesScreen
@@ -167,6 +168,7 @@ private fun MaterialShell(
                                 onEngineChange = onEngineChange,
                                 onOpenAbout = { navigator.push(Route.About) },
                                 onOpenLicenses = { navigator.push(Route.Licenses) },
+                                onOpenFonts = { navigator.push(Route.Fonts) },
                             )
                         }
                     }
@@ -180,6 +182,11 @@ private fun MaterialShell(
                     onBack = { navigator.pop() },
                     onNotify = notify,
                 )
+            }
+
+            entry<Route.Fonts> {
+                LaunchedEffect(Unit) { CrashHandler.note("二级页面 字体") }
+                MaterialFontsScreen(onBack = { navigator.pop() })
             }
 
             entry<Route.About> {

@@ -23,6 +23,7 @@ import androidx.compose.material.icons.outlined.TextFields
 import androidx.compose.material.icons.outlined.Title
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.BugReport
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Code
 import androidx.compose.material.icons.rounded.Delete
@@ -93,6 +94,7 @@ object AppIcons {
     val Pause: ImageVector = Icons.Rounded.Stop
 
     // NekoNote 编辑器悬浮工具栏：描边图标，接近参考应用的细线图标。
+    val Check: ImageVector = Icons.Rounded.Check
     val Task: ImageVector = Icons.Outlined.CheckBoxOutlineBlank
     val BulletList: ImageVector = Icons.Outlined.FormatListBulleted
     val Quote: ImageVector = Icons.Outlined.FormatQuote

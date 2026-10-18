@@ -13,6 +13,7 @@ object NotePrefs {
     private const val KEY_SORT = "sort"
     private const val KEY_TEXT_SIZE = "text_size"
     private const val KEY_PREVIEW_FIRST = "preview_first"
+    private const val KEY_FONT = "font"
 
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -29,6 +30,13 @@ object NotePrefs {
 
     fun saveTextSize(context: Context, size: EditorTextSize) {
         prefs(context).edit().putString(KEY_TEXT_SIZE, size.name).apply()
+    }
+
+    fun loadFont(context: Context): NoteFont =
+        NoteFont.from(prefs(context).getString(KEY_FONT, null))
+
+    fun saveFont(context: Context, font: NoteFont) {
+        prefs(context).edit().putString(KEY_FONT, font.name).apply()
     }
 
     /** Whether opening a note lands on the rendered preview instead of the source. */

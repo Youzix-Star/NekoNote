@@ -5,6 +5,10 @@
 
 package top.youzix.nekonote.ui.miuix.notes
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -47,9 +51,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontSynthesis
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
@@ -64,8 +69,10 @@ import top.youzix.nekonote.markdown.MarkdownEdit
 import top.youzix.nekonote.markdown.MarkdownHighlightColors
 import top.youzix.nekonote.markdown.MarkdownVisualTransformation
 import top.youzix.nekonote.ui.AppIcons
+import top.youzix.nekonote.ui.rememberBottomEdgeHaptic
 import top.youzix.nekonote.ui.miuix.components.BlurredBar
 import top.youzix.nekonote.ui.miuix.components.StatusTag
+import top.youzix.nekonote.ui.theme.NoteFonts
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
@@ -75,7 +82,6 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.SmallTopAppBar
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
 
 /**
@@ -199,23 +205,37 @@ fun NoteEditorScreen(
     val tags = Markdown.parseTags(tagsText)
     val metaText = "${NoteDate.full(createdAt)} · ${Markdown.charCount(body.text)} 字"
 
+    val articleFamily = NoteFonts.of(AppState.noteFont)
     val titleStyle = MiuixTheme.textStyles.title2.copy(
         fontSize = 26.sp,
         fontWeight = FontWeight.Bold,
+        fontFamily = articleFamily,
+        fontSynthesis = FontSynthesis.All,
         color = colorScheme.onSurfaceVariantSummary,
     )
-    val tagStyle = MiuixTheme.textStyles.footnote1.copy(color = colorScheme.primary)
-    val metaStyle = MiuixTheme.textStyles.footnote2
+    val tagStyle = MiuixTheme.textStyles.footnote1.copy(
+        fontFamily = articleFamily,
+        fontSynthesis = FontSynthesis.All,
+        color = colorScheme.primary,
+    )
+    val metaStyle = MiuixTheme.textStyles.footnote2.copy(
+        fontFamily = articleFamily,
+        fontSynthesis = FontSynthesis.All,
+    )
     val bodyLineHeight = (AppState.editorTextSize.bodySp * 1.7f).sp
     val bodyLineHeightDp = with(LocalDensity.current) { bodyLineHeight.toDp() }
     val bodyScroll = rememberScrollState()
+    val bottomHaptic = rememberBottomEdgeHaptic()
     val bodyStyle = TextStyle(
-        fontFamily = FontFamily.Monospace,
+        fontFamily = articleFamily,
+        fontSynthesis = FontSynthesis.All,
         fontSize = AppState.editorTextSize.bodySp.sp,
         lineHeight = bodyLineHeight,
         color = colorScheme.onSurface,
     )
     val bodyPlaceholderStyle = MiuixTheme.textStyles.body1.copy(
+        fontFamily = articleFamily,
+        fontSynthesis = FontSynthesis.All,
         fontSize = AppState.editorTextSize.bodySp.sp,
         color = colorScheme.onSurfaceVariantSummary,
     )
@@ -249,8 +269,13 @@ fun NoteEditorScreen(
             }
         },
         bottomBar = {
-            // The formatting pill belongs to the keyboard: no keyboard, no rail.
-            if (!preview && keyboardVisible) {
+            // The formatting pill belongs to the keyboard: no keyboard, no rail. It fades while
+            // the keyboard inset slides it away, instead of staying opaque until the slide ends.
+            AnimatedVisibility(
+                visible = !preview && keyboardVisible,
+                enter = fadeIn(animationSpec = tween(durationMillis = 150)),
+                exit = fadeOut(animationSpec = tween(durationMillis = 150)),
+            ) {
                 FloatingFormatBar(
                     formatMode = formatMode,
                     onToggleFormatMode = { formatMode = !formatMode },
@@ -275,7 +300,7 @@ fun NoteEditorScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
-                        .scrollEndHaptic()
+                        .nestedScroll(bottomHaptic)
                         .verticalScroll(rememberScrollState()),
                 ) {
                     Text(
@@ -381,7 +406,7 @@ fun NoteEditorScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .scrollEndHaptic()
+                            .nestedScroll(bottomHaptic)
                             .verticalScroll(bodyScroll)
                             .padding(bottom = 8.dp),
                     ) {
