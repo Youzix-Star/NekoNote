@@ -52,7 +52,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontSynthesis
 import androidx.compose.ui.text.font.FontWeight
@@ -223,8 +222,8 @@ fun NoteEditorScreen(
         fontSynthesis = FontSynthesis.All,
     )
     val bodyLineHeight = (AppState.editorTextSize.bodySp * 1.7f).sp
-    val bodyLineHeightDp = with(LocalDensity.current) { bodyLineHeight.toDp() }
     val bodyScroll = rememberScrollState()
+    val pageTail = 160.dp
     val bottomHaptic = rememberBottomEdgeHaptic()
     val bodyStyle = TextStyle(
         fontFamily = articleFamily,
@@ -296,13 +295,22 @@ fun NoteEditorScreen(
         ) {
             Spacer(Modifier.height(8.dp))
             if (preview) {
-                Column(
+                BoxWithConstraints(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f)
-                        .nestedScroll(bottomHaptic)
-                        .verticalScroll(rememberScrollState()),
+                        .weight(1f),
                 ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .nestedScroll(bottomHaptic)
+                            .verticalScroll(rememberScrollState()),
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = maxHeight + pageTail),
+                        ) {
                     Text(
                         text = title.ifBlank { Markdown.titleOf(body.text) }
                             .ifBlank { "未命名笔记" },
@@ -339,6 +347,8 @@ fun NoteEditorScreen(
                     Spacer(Modifier.height(16.dp))
                     MiuixMarkdown(markdown = body.text)
                     Spacer(Modifier.height(32.dp))
+                        }
+                    }
                 }
             } else {
                 BasicTextField(
@@ -402,13 +412,12 @@ fun NoteEditorScreen(
                         .fillMaxWidth()
                         .weight(1f),
                 ) {
-                    val minimumFieldHeight = (maxHeight - 8.dp).coerceAtLeast(bodyLineHeightDp)
+                    val minimumFieldHeight = maxHeight + pageTail
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
                             .nestedScroll(bottomHaptic)
-                            .verticalScroll(bodyScroll)
-                            .padding(bottom = 8.dp),
+                            .verticalScroll(bodyScroll),
                     ) {
                         BasicTextField(
                             value = body,

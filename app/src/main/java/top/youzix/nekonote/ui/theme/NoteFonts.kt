@@ -14,13 +14,22 @@ import top.youzix.nekonote.data.NoteFont
 /**
  * The article font family.
  *
- * The bundled faces carry one regular weight; callers set `fontSynthesis = FontSynthesis.All` so
- * titles and Markdown bold are synthesized instead of silently falling back.
+ * Each bundled family carries a regular and a bold face from the packages the user supplied;
+ * callers still set `fontSynthesis = FontSynthesis.All` so any missing face is synthesized.
  */
 object NoteFonts {
-    private val miSans = FontFamily(Font(R.font.misans_regular, FontWeight.Normal))
-    private val notoSans = FontFamily(Font(R.font.noto_sans_sc_regular, FontWeight.Normal))
-    private val harmony = FontFamily(Font(R.font.harmonyos_sans_sc_regular, FontWeight.Normal))
+    private val miSans = FontFamily(
+        Font(R.font.misans_regular, FontWeight.Normal),
+        Font(R.font.misans_bold, FontWeight.Bold),
+    )
+    private val notoSans = FontFamily(
+        Font(R.font.noto_sans_sc_regular, FontWeight.Normal),
+        Font(R.font.noto_sans_sc_bold, FontWeight.Bold),
+    )
+    private val harmony = FontFamily(
+        Font(R.font.harmonyos_sans_sc_regular, FontWeight.Normal),
+        Font(R.font.harmonyos_sans_sc_bold, FontWeight.Bold),
+    )
 
     fun of(font: NoteFont): FontFamily = when (font) {
         NoteFont.System -> FontFamily.SansSerif

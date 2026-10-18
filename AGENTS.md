@@ -33,7 +33,7 @@
 
 - 标签是 `Note.tags` 显式字段，在标题下方单独一行直接编辑（空格/逗号分隔，`#` 可写可不写）；旧文件没有 `tags` 字段时，解码会从正文的 `#标签` 迁移一次。
 - 编辑页是纯 `surface` 页面，没有卡片、底色和横线：标题、标签、日期/字数、正文直接排在页面上，左右 20dp。
-- 正文用外层 `verticalScroll` 包住自动增高的 `BasicTextField`（`BoxWithConstraints` 给最小高度），并挂 `rememberBottomEdgeHaptic()`：它在未消费的向下拖动时触发，所以内容没写满、没有滚动范围时也有触底触感。Material 另外保留平台 stretch 回弹。
+- 正文用外层 `verticalScroll` 包住自动增高的 `BasicTextField`；输入框最小高度 = 可视高度 + `pageTail`(160dp)，所以文章没写满也能向下滚一段，`rememberBottomEdgeHaptic()` 在滚到底时给触感。预览用同样的 `pageTail` 包一层最小高度，保证短文章也能滚。Material 另外保留平台 stretch 回弹。
 - 标题不再画 `#`；标题 26sp 加粗、弱化色，占位「未命名笔记」。标题下依次是可编辑标签行、完整日期 + 字数的元信息。
 - 编辑时的着色在 `markdown/MarkdownHighlight.kt`：只加 span、不改文本（`OffsetMapping.Identity`），两个引擎只负责传入自己的主题色。
 - 底部工具栏是参考式的悬浮胶囊：52dp 高、圆形、阴影 8dp、`SpaceEvenly` 均匀分布；基础态 6 个描边图标（待办、列表、引用、代码块、链接、文本格式），格式态 5 个格式图标 + 竖分隔线 + 关闭。两套引擎各自实现，图标来自 `AppIcons` 的 Outlined 集合。**只有键盘可见时（`WindowInsets.ime` 底边距 > 0）才显示**，用 `AnimatedVisibility` 做 150ms 淡入淡出，随键盘动画一起消失；键盘收起时内容用 `navigationBarsPadding()` 收尾。
@@ -41,7 +41,7 @@
 - 排序时置顶永远在最前；标签筛选存在 `AppState.noteTagFilter`，标签页点一下会把它带给笔记页。
 - 笔记列表与预览里的标签用组件画廊同款 `StatusTag` 胶囊显示（`secondaryContainer`，即「强调」标签那组颜色）；编辑页的标签行是纯文本输入。
 - 存储格式是 `{"version":1,"notes":[{"tags":[...],...}]}`；改字段要兼容旧文件（解码用 `opt*`，缺字段给默认值；`tags` 缺失时从正文迁移）。
-- 字体文件在 `app/src/main/res/font/`（MiSans / HarmonyOS Sans / Noto Sans SC 各一个 Regular，约 8MB）；三款字体均可商用，许可入口在「开源许可」。字体家族在 `ui/theme/NoteFonts.kt`，单个字重配 `FontSynthesis.All` 合成粗体；字体页在 `ui/{miuix,material3}/fonts/`，正文/标题/标签/预览都读 `AppState.noteFont`。
+- 字体文件在 `app/src/main/res/font/`，用工作区字体包里的 MiSans / HarmonyOS Sans SC / Noto Sans SC（Regular + Bold）；字体页子标题只写来源：Xiaomi / HUAWEI / Google（系统字体写 Android）。三款字体均可商用，许可入口在「开源许可」。字体家族在 `ui/theme/NoteFonts.kt`，字体页在 `ui/{miuix,material3}/fonts/`，正文/标题/标签/预览都读 `AppState.noteFont`。
 
 ## 加一个页面（检查清单）
 

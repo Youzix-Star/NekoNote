@@ -10,10 +10,10 @@ package top.youzix.nekonote.data
  * the system option follows whatever the device uses.
  */
 enum class NoteFont(val label: String, val note: String) {
-    System("系统字体", "设备默认字体"),
-    MiSans("MiSans", "小米 MiSans · 免费商用"),
-    NotoSans("Noto Sans", "SIL OFL 1.1"),
-    HarmonyOS("HarmonyOS Sans", "华为鸿蒙字体 · 免费商用"),
+    System("系统字体", "Android"),
+    MiSans("MiSans", "Xiaomi"),
+    NotoSans("Noto Sans", "Google"),
+    HarmonyOS("HarmonyOS Sans", "HUAWEI"),
     ;
 
     companion object {
