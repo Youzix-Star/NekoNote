@@ -57,8 +57,8 @@
 - 不要凭记忆写 Compose / miuix 的签名。miuix 源码：
   `https://repo1.maven.org/maven2/top/yukonga/miuix/kmp/miuix-ui-android/<版本>/miuix-ui-android-<版本>-sources.jar`。
 - 整份重写文件用 `cat > file <<'EOF'`；这台机器的 `write` 工具建不了硬链接（Android 禁 `link(2)`）。
-- 签名：CI 从 Secrets 读 `KEYSTORE_BASE64` / `KEYSTORE_PASSWORD` / `KEY_ALIAS` / `KEY_PASSWORD`，
-  没有时退回 debug key，APK 仍可安装。
+- 签名：CI 从 Secrets 读 `KEYSTORE_BASE64` / `KEYSTORE_PASSWORD` / `KEY_ALIAS` / `KEY_PASSWORD`。本仓库已配置 DSHA-Next 的发布密钥（RSA 4096，证书 SHA-256 `DE:86:89:10:…:D2`，完整值见 README）；没有 Secrets 时退回 debug key。
+- 图标：`AppIconText` / `AppMark` 与 `app/src/main/res/{drawable/app_icon.png,mipmap-*/ic_launcher*.png}` 都是 `⦮_   ̫ _⦯`；换图标时两者一起换。
 
 ## 许可
 

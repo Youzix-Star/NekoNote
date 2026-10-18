@@ -1,6 +1,6 @@
 # NekoNote
 
-一个只在设备上生活的 Markdown 笔记应用：写、读、找、归类，没有账号也没有同步。
+一个只在设备上生活的 Markdown 笔记应用：写、读、找、归类，没有账号也没有同步。图标是 `⦮_   ̫ _⦯`。
 
 界面直接沿用 [NekoUi](https://github.com/Youzix-Star/NekoUi) 的外壳：同一套 Miuix / Material 3 双引擎、
 液态玻璃底栏、二级页返回手势、`demo` 换成了真正的笔记数据。应用内可随时切换引擎，笔记不受影响。
@@ -22,8 +22,8 @@
 ## 构建
 
 只在 GitHub Actions 里构建。推送 `main` 产出 APK artifact，推送 `v*` 标签额外创建 Release。
-签名从 Actions Secrets 的 `KEYSTORE_BASE64` / `KEYSTORE_PASSWORD` / `KEY_ALIAS` / `KEY_PASSWORD` 读取；
-没有时退回 runner 的 debug key，APK 仍可安装。
+签名从 Actions Secrets 的 `KEYSTORE_BASE64` / `KEYSTORE_PASSWORD` / `KEY_ALIAS` / `KEY_PASSWORD` 读取，仓库已配置 DSHA-Next 的发布密钥；
+证书 SHA-256 `DE:86:89:10:E5:81:6E:CD:C6:BA:87:08:74:2B:9A:61:D1:FA:15:03:D7:9D:66:38:23:7A:33:88:D6:77:73:D2`。没有 Secrets 时退回 debug key，APK 仍可安装。
 
 ## 许可
 

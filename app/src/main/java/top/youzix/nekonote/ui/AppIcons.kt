@@ -60,9 +60,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
  * The launcher icon is separate art under `res/mipmap-*` and does not contain this string, so the
  * two no longer have to move together.
  *
- * Codepoints: U+1526, U+00B0, U+A4B3, U+00B0, U+1528, U+0341, U+0316, U+002D.
+ * Codepoints: U+29AE, U+005F, U+0020, U+0020, U+0020, U+032B, U+0020, U+005F, U+29AF.
  */
-const val AppIconText = "ᔦ ° ꒳ ° ᔨ ̖́-"
+const val AppIconText = "⦮_   ̫ _⦯"
 
 /** Material icons used by the app. */
 object AppIcons {
