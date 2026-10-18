@@ -9,6 +9,16 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 
 /**
+ * The markers the editor toolbar shows, spelled with escapes rather than literal backticks: the
+ * repo's lexer reads a backtick as the start of a Kotlin name and loses track of the string around
+ * it. Kept here so the label on the button and the text it inserts are the same characters.
+ */
+object MarkdownTokens {
+    const val TICK = "\u0060"
+    const val FENCE = "\u0060\u0060\u0060"
+}
+
+/**
  * The editor's formatting actions, as pure functions over a [TextFieldValue].
  *
  * Keeping them out of the screen means the toolbar cannot quietly disagree with the cursor: every
@@ -17,22 +27,13 @@ import androidx.compose.ui.text.input.TextFieldValue
  */
 object MarkdownEdit {
 
-    /**
-     * The code-fence marker, spelled with escapes rather than literal backticks: the repo's lexer
-     * reads a backtick as the start of a Kotlin name and loses track of the string around it.
-     */
-    /** One backtick, for inline code. */
-    private val TICK = "\u0060"
-
-    private val FENCE = TICK + TICK + TICK
-
     fun bold(value: TextFieldValue) = wrap(value, "**", "**")
 
     fun italic(value: TextFieldValue) = wrap(value, "*", "*")
 
     fun strike(value: TextFieldValue) = wrap(value, "~~", "~~")
 
-    fun code(value: TextFieldValue) = wrap(value, TICK, TICK)
+    fun code(value: TextFieldValue) = wrap(value, MarkdownTokens.TICK, MarkdownTokens.TICK)
 
     fun heading(value: TextFieldValue) = linePrefix(value, "# ")
 
@@ -42,7 +43,8 @@ object MarkdownEdit {
 
     fun quote(value: TextFieldValue) = linePrefix(value, "> ")
 
-    fun codeBlock(value: TextFieldValue) = wrap(value, FENCE + "\n", "\n" + FENCE)
+    fun codeBlock(value: TextFieldValue) =
+        wrap(value, MarkdownTokens.FENCE + "\n", "\n" + MarkdownTokens.FENCE)
 
     fun link(value: TextFieldValue): TextFieldValue {
         val start = minOf(value.selection.start, value.selection.end)

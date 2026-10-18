@@ -41,10 +41,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -54,6 +56,9 @@ import top.youzix.nekonote.data.NoteDate
 import top.youzix.nekonote.data.NoteRepository
 import top.youzix.nekonote.markdown.Markdown
 import top.youzix.nekonote.markdown.MarkdownEdit
+import top.youzix.nekonote.markdown.MarkdownHighlightColors
+import top.youzix.nekonote.markdown.MarkdownTokens
+import top.youzix.nekonote.markdown.MarkdownVisualTransformation
 import top.youzix.nekonote.ui.AppIcons
 import top.youzix.nekonote.ui.miuix.components.BlurredBar
 import top.yukonga.miuix.kmp.basic.Button
@@ -93,6 +98,17 @@ fun NoteEditorScreen(
     var deleted by remember { mutableStateOf(false) }
 
     val scrollBehavior = MiuixScrollBehavior()
+    val highlightColors = MarkdownHighlightColors(
+        syntax = colorScheme.primary,
+        heading = colorScheme.onSurface,
+        codeBackground = colorScheme.surfaceContainerHigh,
+        codeText = colorScheme.onSurface,
+        tagBackground = colorScheme.secondaryContainer,
+        tagText = colorScheme.onSecondaryContainer,
+        link = colorScheme.primary,
+        muted = colorScheme.onSurfaceVariantSummary,
+    )
+    val highlight = remember(highlightColors) { MarkdownVisualTransformation(highlightColors) }
     val latestTitle = rememberUpdatedState(title)
     val latestBody = rememberUpdatedState(body.text)
     val latestDeleted = rememberUpdatedState(deleted)
@@ -186,15 +202,16 @@ fun NoteEditorScreen(
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                         horizontalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
-                        FormatButton("标题") { format { MarkdownEdit.heading(it) } }
-                        FormatButton("粗体") { format { MarkdownEdit.bold(it) } }
-                        FormatButton("斜体") { format { MarkdownEdit.italic(it) } }
-                        FormatButton("列表") { format { MarkdownEdit.bullet(it) } }
-                        FormatButton("待办") { format { MarkdownEdit.task(it) } }
-                        FormatButton("引用") { format { MarkdownEdit.quote(it) } }
-                        FormatButton("代码") { format { MarkdownEdit.code(it) } }
-                        FormatButton("代码块") { format { MarkdownEdit.codeBlock(it) } }
-                        FormatButton("链接") { format { MarkdownEdit.link(it) } }
+                        FormatButton("#") { format { MarkdownEdit.heading(it) } }
+                        FormatButton("**") { format { MarkdownEdit.bold(it) } }
+                        FormatButton("*") { format { MarkdownEdit.italic(it) } }
+                        FormatButton("~~") { format { MarkdownEdit.strike(it) } }
+                        FormatButton("-") { format { MarkdownEdit.bullet(it) } }
+                        FormatButton("- [ ]") { format { MarkdownEdit.task(it) } }
+                        FormatButton(">") { format { MarkdownEdit.quote(it) } }
+                        FormatButton(MarkdownTokens.TICK) { format { MarkdownEdit.code(it) } }
+                        FormatButton(MarkdownTokens.FENCE) { format { MarkdownEdit.codeBlock(it) } }
+                        FormatButton("[]()") { format { MarkdownEdit.link(it) } }
                     }
                 }
             }
@@ -235,29 +252,42 @@ fun NoteEditorScreen(
                 }
             } else {
                 Spacer(Modifier.height(6.dp))
-                BasicTextField(
-                    value = title,
-                    onValueChange = {
-                        title = it
-                        store(it, body.text)
-                    },
-                    singleLine = true,
-                    textStyle = MiuixTheme.textStyles.title2.copy(color = colorScheme.onBackground),
-                    cursorBrush = SolidColor(colorScheme.primary),
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    decorationBox = { innerTextField ->
-                        Box {
-                            if (title.isEmpty()) {
-                                Text(
-                                    text = "标题",
-                                    style = MiuixTheme.textStyles.title2,
-                                    color = colorScheme.onSurfaceVariantSummary,
-                                )
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    // The note title is the note's level-one heading; the marker is an editing
+                    // affordance and is never stored in the body.
+                    Text(
+                        text = "#",
+                        style = MiuixTheme.textStyles.title2.copy(fontWeight = FontWeight.Bold),
+                        color = colorScheme.primary,
+                        modifier = Modifier.padding(end = 8.dp),
+                    )
+                    BasicTextField(
+                        value = title,
+                        onValueChange = {
+                            title = it
+                            store(it, body.text)
+                        },
+                        singleLine = true,
+                        textStyle = MiuixTheme.textStyles.title2.copy(color = colorScheme.onBackground),
+                        cursorBrush = SolidColor(colorScheme.primary),
+                        modifier = Modifier.weight(1f),
+                        decorationBox = { innerTextField ->
+                            Box {
+                                if (title.isEmpty()) {
+                                    Text(
+                                        text = "标题",
+                                        style = MiuixTheme.textStyles.title2,
+                                        color = colorScheme.onSurfaceVariantSummary,
+                                    )
+                                }
+                                innerTextField()
                             }
-                            innerTextField()
-                        }
-                    },
-                )
+                        },
+                    )
+                }
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = "${Markdown.charCount(body.text)} 字 · " +
@@ -294,6 +324,7 @@ fun NoteEditorScreen(
                             color = colorScheme.onSurface,
                         ),
                         cursorBrush = SolidColor(colorScheme.primary),
+                        visualTransformation = highlight,
                     )
                 }
             }

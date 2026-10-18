@@ -8,7 +8,7 @@
 | 路径 | 是什么 |
 |---|---|
 | `data/` | 笔记的模型与存储：`Note`、`NoteRepository`（`filesDir/notes/notes.json`）、`NotePrefs`、`NoteDate` |
-| `markdown/` | `Markdown`（块解析 + 行内 span + 标签）、`MarkdownEdit`（工具栏的全部编辑动作） |
+| `markdown/` | `Markdown`（块解析 + 行内 span + 标签）、`MarkdownHighlight`（编辑时的语法着色）、`MarkdownEdit`（工具栏的全部编辑动作） |
 | `ui/miuix/notes/` | Miuix 引擎：笔记列表、编辑器、标签页、Markdown 渲染 |
 | `ui/material3/notes/` | Material 3 引擎：同一批页面，另一套实现，另一套 Markdown 渲染 |
 | `ui/miuix/**`、`ui/material3/**` | 设置、关于、许可，以及框架自带的组件 |
@@ -32,6 +32,9 @@
 ## 笔记的约定
 
 - 正文里的 `#标签` 就是标签；标题是独立字段，空的时候回退到正文第一行。
+- 标题就是笔记的一级标题：编辑模式在标题框前画一个主题色的 `#`，这个符号只是视觉标记，不写进数据。
+- 编辑时的着色在 `markdown/MarkdownHighlight.kt`：只加 span、不改文本（`OffsetMapping.Identity`），两个引擎只负责传入自己的主题色。
+- 底栏工具显示原始 Markdown 符号（`#`、`**`、`- [ ]`、`[]()`…），符号与插入文本同源于 `MarkdownTokens`，不要另写一份字面量。
 - 空笔记（标题与正文都空）离开编辑器时会被删除；新建笔记在第一次输入时才真正落库。
 - 排序时置顶永远在最前；标签筛选存在 `AppState.noteTagFilter`，标签页点一下会把它带给笔记页。
 - 存储格式是 `{"version":1,"notes":[...]}`；改字段要兼容旧文件（解码用 `opt*`，缺字段给默认值）。

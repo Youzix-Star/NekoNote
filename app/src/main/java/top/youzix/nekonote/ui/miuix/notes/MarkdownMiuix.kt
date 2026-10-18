@@ -55,12 +55,17 @@ fun MiuixMarkdown(
     val muted = colorScheme.onSurfaceVariantSummary
     val codeBackground = colorScheme.surfaceContainerHigh
     val linkColor = colorScheme.primary
+    val tagBackground = colorScheme.secondaryContainer
+    val tagText = colorScheme.onSecondaryContainer
+
+    @Composable
+    fun annotated(text: String) = remember(text, codeBackground, linkColor, tagBackground, tagText) {
+        Markdown.inline(text, codeBackground, linkColor, tagBackground, tagText)
+    }
 
     @Composable
     fun inlineText(text: String) = Text(
-        text = remember(text, codeBackground, linkColor) {
-            Markdown.inline(text, codeBackground, linkColor)
-        },
+        text = annotated(text),
         style = body,
         color = bodyColor,
     )
@@ -76,9 +81,7 @@ fun MiuixMarkdown(
         blocks.forEach { block ->
             when (block) {
                 is MdBlock.Heading -> Text(
-                    text = remember(block.text, codeBackground, linkColor) {
-                        Markdown.inline(block.text, codeBackground, linkColor)
-                    },
+                    text = annotated(block.text),
                     fontSize = (bodySize + when (block.level) {
                         1 -> 10f
                         2 -> 6f
@@ -106,9 +109,7 @@ fun MiuixMarkdown(
                                     .padding(end = if (block.ordered) 6.dp else 0.dp),
                             )
                             Text(
-                                text = remember(item, codeBackground, linkColor) {
-                                    Markdown.inline(item, codeBackground, linkColor)
-                                },
+                                text = annotated(item),
                                 style = body,
                                 color = bodyColor,
                                 modifier = Modifier
@@ -131,9 +132,7 @@ fun MiuixMarkdown(
                                     .padding(top = 1.dp),
                             )
                             Text(
-                                text = remember(item.text, codeBackground, linkColor) {
-                                    Markdown.inline(item.text, codeBackground, linkColor)
-                                },
+                                text = annotated(item.text),
                                 style = body.copy(
                                     textDecoration = if (item.checked) TextDecoration.LineThrough else null,
                                 ),
@@ -154,9 +153,7 @@ fun MiuixMarkdown(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
-                        text = remember(block.text, codeBackground, linkColor) {
-                            Markdown.inline(block.text, codeBackground, linkColor)
-                        },
+                        text = annotated(block.text),
                         style = body.copy(fontStyle = FontStyle.Italic),
                         color = colorScheme.onSurface,
                     )

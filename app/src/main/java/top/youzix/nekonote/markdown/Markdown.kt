@@ -163,16 +163,27 @@ object Markdown {
     // ---- inline spans ----
 
     /**
-     * Turns the inline markup in [text] into spans. [codeBackground] and [linkColor] come from
-     * whichever engine is drawing the page, so the same parse works in both.
+     * Turns the inline markup in [text] into spans. The colours come from whichever engine is
+     * drawing the page, so the same parse works in both; `#标签` gets the emphasised tag treatment
+     * (a container background) when [tagBackground] is supplied.
      */
-    fun inline(text: String, codeBackground: Color, linkColor: Color): AnnotatedString =
-        buildAnnotatedString { appendInline(text, codeBackground, linkColor) }
+    fun inline(
+        text: String,
+        codeBackground: Color,
+        linkColor: Color,
+        tagBackground: Color = Color.Unspecified,
+        tagText: Color = Color.Unspecified,
+    ): AnnotatedString =
+        buildAnnotatedString {
+            appendInline(text, codeBackground, linkColor, tagBackground, tagText)
+        }
 
     private fun AnnotatedString.Builder.appendInline(
         text: String,
         codeBackground: Color,
         linkColor: Color,
+        tagBackground: Color,
+        tagText: Color,
     ) {
         var i = 0
         while (i < text.length) {
@@ -186,7 +197,7 @@ object Markdown {
                                 fontStyle = FontStyle.Italic,
                             ),
                         ) {
-                            appendInline(text.substring(i + 3, end), codeBackground, linkColor)
+                            appendInline(text.substring(i + 3, end), codeBackground, linkColor, tagBackground, tagText)
                         }
                         i = end + 3
                     } else {
@@ -200,7 +211,7 @@ object Markdown {
                     val end = text.indexOf(marker, i + 2)
                     if (end > i + 2) {
                         withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
-                            appendInline(text.substring(i + 2, end), codeBackground, linkColor)
+                            appendInline(text.substring(i + 2, end), codeBackground, linkColor, tagBackground, tagText)
                         }
                         i = end + 2
                     } else {
@@ -213,7 +224,7 @@ object Markdown {
                     val end = text.indexOf("~~", i + 2)
                     if (end > i + 2) {
                         withStyle(SpanStyle(textDecoration = TextDecoration.LineThrough)) {
-                            appendInline(text.substring(i + 2, end), codeBackground, linkColor)
+                            appendInline(text.substring(i + 2, end), codeBackground, linkColor, tagBackground, tagText)
                         }
                         i = end + 2
                     } else {
@@ -244,7 +255,7 @@ object Markdown {
                     val end = text.indexOf(text[i], i + 1)
                     if (end > i + 1) {
                         withStyle(SpanStyle(fontStyle = FontStyle.Italic)) {
-                            appendInline(text.substring(i + 1, end), codeBackground, linkColor)
+                            appendInline(text.substring(i + 1, end), codeBackground, linkColor, tagBackground, tagText)
                         }
                         i = end + 1
                     } else {
@@ -266,9 +277,29 @@ object Markdown {
                                 textDecoration = TextDecoration.Underline,
                             ),
                         ) {
-                            appendInline(text.substring(i + 1, closeBracket), codeBackground, linkColor)
+                            appendInline(text.substring(i + 1, closeBracket), codeBackground, linkColor, tagBackground, tagText)
                         }
                         i = closeParen + 1
+                    } else {
+                        append(text[i])
+                        i++
+                    }
+                }
+
+                text[i] == '#' && (i == 0 || (text[i - 1] != '#' && !isTagChar(text[i - 1]))) -> {
+                    var tagEnd = i + 1
+                    while (tagEnd < text.length && isTagChar(text[tagEnd])) tagEnd++
+                    if (tagEnd > i + 1 && tagBackground != Color.Unspecified) {
+                        withStyle(
+                            SpanStyle(
+                                background = tagBackground,
+                                color = tagText,
+                                fontWeight = FontWeight.Medium,
+                            ),
+                        ) {
+                            append(text.substring(i, tagEnd))
+                        }
+                        i = tagEnd
                     } else {
                         append(text[i])
                         i++
@@ -282,6 +313,9 @@ object Markdown {
             }
         }
     }
+
+    /** The characters a `#标签` token may contain; CJK characters count as letters. */
+    private fun isTagChar(c: Char): Boolean = c.isLetterOrDigit() || c == '_' || c == '-'
 
     // ---- plain text views ----
 

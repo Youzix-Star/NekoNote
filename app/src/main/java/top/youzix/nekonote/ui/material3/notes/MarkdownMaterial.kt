@@ -55,6 +55,13 @@ fun MaterialMarkdown(
     val muted = colorScheme.onSurfaceVariant
     val codeBackground = colorScheme.surfaceContainerHigh
     val linkColor = colorScheme.primary
+    val tagBackground = colorScheme.secondaryContainer
+    val tagText = colorScheme.onSecondaryContainer
+
+    @Composable
+    fun annotated(text: String) = remember(text, codeBackground, linkColor, tagBackground, tagText) {
+        Markdown.inline(text, codeBackground, linkColor, tagBackground, tagText)
+    }
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         if (blocks.isEmpty()) {
@@ -63,9 +70,7 @@ fun MaterialMarkdown(
         blocks.forEach { block ->
             when (block) {
                 is MdBlock.Heading -> Text(
-                    text = remember(block.text, codeBackground, linkColor) {
-                        Markdown.inline(block.text, codeBackground, linkColor)
-                    },
+                    text = annotated(block.text),
                     fontSize = (bodySize + when (block.level) {
                         1 -> 10f
                         2 -> 6f
@@ -79,9 +84,7 @@ fun MaterialMarkdown(
                 )
 
                 is MdBlock.Paragraph -> Text(
-                    text = remember(block.text, codeBackground, linkColor) {
-                        Markdown.inline(block.text, codeBackground, linkColor)
-                    },
+                    text = annotated(block.text),
                     style = body,
                     color = bodyColor,
                 )
@@ -99,9 +102,7 @@ fun MaterialMarkdown(
                                     .padding(end = if (block.ordered) 6.dp else 0.dp),
                             )
                             Text(
-                                text = remember(item, codeBackground, linkColor) {
-                                    Markdown.inline(item, codeBackground, linkColor)
-                                },
+                                text = annotated(item),
                                 style = body,
                                 color = bodyColor,
                                 modifier = Modifier
@@ -124,9 +125,7 @@ fun MaterialMarkdown(
                                     .padding(top = 1.dp),
                             )
                             Text(
-                                text = remember(item.text, codeBackground, linkColor) {
-                                    Markdown.inline(item.text, codeBackground, linkColor)
-                                },
+                                text = annotated(item.text),
                                 style = body.copy(
                                     textDecoration = if (item.checked) TextDecoration.LineThrough else null,
                                 ),
@@ -146,9 +145,7 @@ fun MaterialMarkdown(
                         .padding(horizontal = 14.dp, vertical = 12.dp),
                 ) {
                     Text(
-                        text = remember(block.text, codeBackground, linkColor) {
-                            Markdown.inline(block.text, codeBackground, linkColor)
-                        },
+                        text = annotated(block.text),
                         style = body.copy(fontStyle = FontStyle.Italic),
                         color = colorScheme.onSecondaryContainer,
                     )
