@@ -284,6 +284,7 @@ fun MaterialNoteEditorScreen(
                         .fillMaxWidth()
                         .weight(1f),
                 ) {
+                    val pageMinHeight = maxHeight + pageTail
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -293,7 +294,7 @@ fun MaterialNoteEditorScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .heightIn(min = maxHeight + pageTail),
+                                .heightIn(min = pageMinHeight),
                         ) {
                     Text(
                         text = title.ifBlank { Markdown.titleOf(body.text) }
