@@ -56,8 +56,10 @@ private val ORDERED = Regex("^(\\d{1,3}[.)])[ \\t]+")
 
 /** Paints [source] line by line; fences get monospace, headings get bold, everything else inline. */
 fun highlightMarkdown(source: String, colors: MarkdownHighlightColors): AnnotatedString {
-    val builder = AnnotatedString.Builder(source)
-    if (source.isEmpty()) return builder.toAnnotatedString()
+    if (source.isEmpty()) return AnnotatedString("")
+    // Text first, then spans: Builder takes a capacity, not the text itself.
+    val builder = AnnotatedString.Builder(source.length)
+    builder.append(source)
 
     val syntax = SpanStyle(color = colors.syntax, fontWeight = FontWeight.Medium)
     val codeLine = SpanStyle(
