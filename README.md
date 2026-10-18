@@ -5,7 +5,7 @@
 界面直接沿用 [NekoUi](https://github.com/Youzix-Star/NekoUi) 的外壳：同一套 Miuix / Material 3 双引擎、
 液态玻璃底栏、二级页返回手势、`demo` 换成了真正的笔记数据。应用内可随时切换引擎，笔记不受影响。
 
-包名 `top.youzix.nekonote` · minSdk 33 · targetSdk 35 · v0.1.0
+包名 `top.youzix.nekonote` · minSdk 33 · targetSdk 35 · v0.1.4
 
 ## 有什么
 
