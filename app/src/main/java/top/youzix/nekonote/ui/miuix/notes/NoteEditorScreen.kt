@@ -9,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
@@ -116,6 +118,7 @@ fun NoteEditorScreen(
     val bodyLineHeight = (AppState.editorTextSize.bodySp * 1.7f).sp
     val bodyLineHeightPx = with(LocalDensity.current) { bodyLineHeight.toPx() }
     val pageTopPadding = 12.dp
+    val pageBottomPadding = 32.dp
     val pageShape = RoundedCornerShape(14.dp)
     val pageScroll = rememberScrollState()
     val ruleColor = colorScheme.onSurface.copy(alpha = 0.08f)
@@ -306,7 +309,7 @@ fun NoteEditorScreen(
                     color = colorScheme.onSurfaceVariantSummary,
                 )
                 Spacer(Modifier.height(10.dp))
-                Box(
+                BoxWithConstraints(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
@@ -331,11 +334,18 @@ fun NoteEditorScreen(
                             }
                         },
                 ) {
+                    val minimumFieldHeight = (maxHeight - pageTopPadding - pageBottomPadding)
+                        .coerceAtLeast(bodyLineHeight)
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
                             .verticalScroll(pageScroll)
-                            .padding(horizontal = 14.dp, vertical = pageTopPadding),
+                            .padding(
+                                start = 14.dp,
+                                end = 14.dp,
+                                top = pageTopPadding,
+                                bottom = pageBottomPadding,
+                            ),
                     ) {
                         BasicTextField(
                             value = body,
@@ -343,7 +353,9 @@ fun NoteEditorScreen(
                                 body = it
                                 store(title, it.text)
                             },
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = minimumFieldHeight),
                             textStyle = TextStyle(
                                 fontFamily = FontFamily.Monospace,
                                 fontSize = AppState.editorTextSize.bodySp.sp,
@@ -365,7 +377,6 @@ fun NoteEditorScreen(
                                 }
                             },
                         )
-                        Spacer(Modifier.height(48.dp))
                     }
                 }
             }

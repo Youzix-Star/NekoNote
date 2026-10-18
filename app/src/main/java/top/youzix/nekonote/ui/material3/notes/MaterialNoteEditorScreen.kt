@@ -10,6 +10,7 @@ package top.youzix.nekonote.ui.material3.notes
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
@@ -154,6 +156,7 @@ fun MaterialNoteEditorScreen(
     val bodyLineHeight = (AppState.editorTextSize.bodySp * 1.7f).sp
     val bodyLineHeightPx = with(LocalDensity.current) { bodyLineHeight.toPx() }
     val pageTopPadding = 12.dp
+    val pageBottomPadding = 32.dp
     val pageShape = RoundedCornerShape(16.dp)
     val pageScroll = rememberScrollState()
     val ruleColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
@@ -300,7 +303,7 @@ fun MaterialNoteEditorScreen(
                     shape = pageShape,
                     color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 ) {
-                    Box(
+                    BoxWithConstraints(
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(pageShape)
@@ -323,11 +326,18 @@ fun MaterialNoteEditorScreen(
                                 }
                             },
                     ) {
+                        val minimumFieldHeight = (maxHeight - pageTopPadding - pageBottomPadding)
+                            .coerceAtLeast(bodyLineHeight)
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .verticalScroll(pageScroll)
-                                .padding(horizontal = 14.dp, vertical = pageTopPadding),
+                                .padding(
+                                    start = 14.dp,
+                                    end = 14.dp,
+                                    top = pageTopPadding,
+                                    bottom = pageBottomPadding,
+                                ),
                         ) {
                             BasicTextField(
                                 value = body,
@@ -335,7 +345,9 @@ fun MaterialNoteEditorScreen(
                                     body = it
                                     store(title, it.text)
                                 },
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = minimumFieldHeight),
                                 textStyle = TextStyle(
                                     fontFamily = FontFamily.Monospace,
                                     fontSize = AppState.editorTextSize.bodySp.sp,
@@ -357,7 +369,6 @@ fun MaterialNoteEditorScreen(
                                     }
                                 },
                             )
-                            Spacer(Modifier.height(48.dp))
                         }
                     }
                 }
