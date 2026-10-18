@@ -9,7 +9,7 @@
 |---|---|
 | `data/` | 笔记的模型与存储：`Note`、`NoteRepository`（`filesDir/notes/notes.json`）、`NotePrefs`、`NoteDate` |
 | `markdown/` | `Markdown`（块解析 + 行内 span + 标签）、`MarkdownHighlight`（编辑时的语法着色）、`MarkdownEdit`（工具栏的全部编辑动作） |
-| `ui/miuix/notes/` | Miuix 引擎：笔记列表、编辑器、标签页、Markdown 渲染 |
+| `ui/miuix/notes/` | Miuix 引擎：笔记列表、编辑器（纯白页 + 悬浮图标胶囊）、标签页、Markdown 渲染 |
 | `ui/material3/notes/` | Material 3 引擎：同一批页面，另一套实现，另一套 Markdown 渲染 |
 | `ui/miuix/**`、`ui/material3/**` | 设置、关于、许可，以及框架自带的组件 |
 | `AppState` | 引擎 / 模糊 / 主题 / 排序 / 字号 / 默认预览 / 当前标签筛选 |
@@ -32,10 +32,10 @@
 ## 笔记的约定
 
 - 正文里的 `#标签` 就是标签；标题是独立字段，空的时候回退到正文第一行。
-- 标题就是笔记的一级标题：编辑模式在标题框前画一个主题色的 `#`，这个符号只是视觉标记，不写进数据。
+- 编辑页是纯 `surface` 页面，没有卡片、底色和横线：标题、日期/字数、正文直接排在页面上，左右 20dp。
+- 标题不再画 `#`；标题 26sp、弱化色，占位「未命名笔记」，元信息是完整日期 + 字数 + 标签。
 - 编辑时的着色在 `markdown/MarkdownHighlight.kt`：只加 span、不改文本（`OffsetMapping.Identity`），两个引擎只负责传入自己的主题色。
-- 底栏工具每个按钮只显示一个原始符号（`#`、`*`、`~`、`-`、`[`、`{`、`@`…）；符号是外观，按下去插入的仍是完整 Markdown。反引号标签同源于 `MarkdownTokens`，不要另写一份字面量。
-- 编辑区的横线是笔记本式的：`drawBehind` 画在滚动内容上而不是固定卡片上，所以横线会跟文字一起滚动、拉伸和回弹；间距按正文 `lineHeight`。改行高时两处（TextStyle 与 pattern）必须一起改。
+- 底部工具栏是参考式的悬浮胶囊：52dp 高、圆形、阴影 8dp、`SpaceEvenly` 均匀分布；基础态 6 个描边图标（待办、列表、引用、代码块、链接、文本格式），格式态 5 个格式图标 + 竖分隔线 + 关闭。两套引擎各自实现，图标来自 `AppIcons` 的 Outlined 集合。
 - 空笔记（标题与正文都空）离开编辑器时会被删除；新建笔记在第一次输入时才真正落库。
 - 排序时置顶永远在最前；标签筛选存在 `AppState.noteTagFilter`，标签页点一下会把它带给笔记页。
 - 存储格式是 `{"version":1,"notes":[...]}`；改字段要兼容旧文件（解码用 `opt*`，缺字段给默认值）。

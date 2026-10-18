@@ -9,6 +9,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.automirrored.rounded.Article
+import androidx.compose.material.icons.outlined.CheckBoxOutlineBlank
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Code
+import androidx.compose.material.icons.outlined.DataObject
+import androidx.compose.material.icons.outlined.FormatBold
+import androidx.compose.material.icons.outlined.FormatItalic
+import androidx.compose.material.icons.outlined.FormatListBulleted
+import androidx.compose.material.icons.outlined.FormatQuote
+import androidx.compose.material.icons.outlined.Link
+import androidx.compose.material.icons.outlined.StrikethroughS
+import androidx.compose.material.icons.outlined.TextFields
+import androidx.compose.material.icons.outlined.Title
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.CheckCircle
@@ -79,6 +91,20 @@ object AppIcons {
     val Update: ImageVector = Icons.Rounded.SystemUpdate
     val Play: ImageVector = Icons.Rounded.PlayArrow
     val Pause: ImageVector = Icons.Rounded.Stop
+
+    // NekoNote 编辑器悬浮工具栏：描边图标，接近参考应用的细线图标。
+    val Task: ImageVector = Icons.Outlined.CheckBoxOutlineBlank
+    val BulletList: ImageVector = Icons.Outlined.FormatListBulleted
+    val Quote: ImageVector = Icons.Outlined.FormatQuote
+    val CodeBlock: ImageVector = Icons.Outlined.DataObject
+    val Link: ImageVector = Icons.Outlined.Link
+    val TextFormat: ImageVector = Icons.Outlined.TextFields
+    val Heading: ImageVector = Icons.Outlined.Title
+    val Bold: ImageVector = Icons.Outlined.FormatBold
+    val Italic: ImageVector = Icons.Outlined.FormatItalic
+    val Strike: ImageVector = Icons.Outlined.StrikethroughS
+    val InlineCode: ImageVector = Icons.Outlined.Code
+    val Close: ImageVector = Icons.Outlined.Close
 
     // NekoNote: note list, editor and tag pages.
     val Add: ImageVector = Icons.Rounded.Add

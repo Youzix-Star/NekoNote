@@ -7,12 +7,10 @@
 
 package top.youzix.nekonote.ui.material3.notes
 
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -21,15 +19,17 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -53,15 +53,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
@@ -71,14 +70,13 @@ import top.youzix.nekonote.data.NoteRepository
 import top.youzix.nekonote.markdown.Markdown
 import top.youzix.nekonote.markdown.MarkdownEdit
 import top.youzix.nekonote.markdown.MarkdownHighlightColors
-import top.youzix.nekonote.markdown.MarkdownTokens
 import top.youzix.nekonote.markdown.MarkdownVisualTransformation
 import top.youzix.nekonote.ui.AppIcons
 import top.youzix.nekonote.ui.material3.components.ExpressiveScaffold
 
 /**
- * The editor, Material flavour: same state machine and same save rules as the miuix one, drawn with
- * Material's typography and containers.
+ * The editor, Material flavour: same borderless page and floating two-state icon pill as the
+ * reference, drawn with Material's typography and surface tokens.
  */
 @Composable
 fun MaterialNoteEditorScreen(
@@ -92,10 +90,22 @@ fun MaterialNoteEditorScreen(
         mutableStateOf(TextFieldValue(stored?.body.orEmpty()))
     }
     var preview by rememberSaveable(noteId) { mutableStateOf(AppState.previewFirst) }
+    var formatMode by rememberSaveable(noteId) { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var deleted by remember { mutableStateOf(false) }
 
+    val highlightColors = MarkdownHighlightColors(
+        syntax = MaterialTheme.colorScheme.primary,
+        heading = MaterialTheme.colorScheme.onSurface,
+        codeBackground = MaterialTheme.colorScheme.surfaceContainerHigh,
+        codeText = MaterialTheme.colorScheme.onSurface,
+        tagBackground = MaterialTheme.colorScheme.secondaryContainer,
+        tagText = MaterialTheme.colorScheme.onSecondaryContainer,
+        link = MaterialTheme.colorScheme.primary,
+        muted = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    val highlight = remember(highlightColors) { MarkdownVisualTransformation(highlightColors) }
     val latestTitle = rememberUpdatedState(title)
     val latestBody = rememberUpdatedState(body.text)
     val latestDeleted = rememberUpdatedState(deleted)
@@ -142,33 +152,59 @@ fun MaterialNoteEditorScreen(
         store(title, body.text)
     }
 
-    val highlightColors = MarkdownHighlightColors(
-        syntax = MaterialTheme.colorScheme.primary,
-        heading = MaterialTheme.colorScheme.onSurface,
-        codeBackground = MaterialTheme.colorScheme.surfaceContainerHigh,
-        codeText = MaterialTheme.colorScheme.onSurface,
-        tagBackground = MaterialTheme.colorScheme.secondaryContainer,
-        tagText = MaterialTheme.colorScheme.onSecondaryContainer,
-        link = MaterialTheme.colorScheme.primary,
-        muted = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-    val highlight = remember(highlightColors) { MarkdownVisualTransformation(highlightColors) }
-    val bodyLineHeight = (AppState.editorTextSize.bodySp * 1.7f).sp
-    val bodyLineHeightPx = with(LocalDensity.current) { bodyLineHeight.toPx() }
-    val bodyLineHeightDp = with(LocalDensity.current) { bodyLineHeight.toDp() }
-    val pageTopPadding = 12.dp
-    val pageBottomPadding = 32.dp
-    val pageLineInset = 10.dp
-    val pageShape = RoundedCornerShape(16.dp)
-    val pageScroll = rememberScrollState()
-    val ruleColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+    fun apply(action: EditorAction) {
+        format { value ->
+            when (action) {
+                EditorAction.Task -> MarkdownEdit.task(value)
+                EditorAction.Bullet -> MarkdownEdit.bullet(value)
+                EditorAction.Quote -> MarkdownEdit.quote(value)
+                EditorAction.CodeBlock -> MarkdownEdit.codeBlock(value)
+                EditorAction.Link -> MarkdownEdit.link(value)
+                EditorAction.Heading -> MarkdownEdit.heading(value)
+                EditorAction.Bold -> MarkdownEdit.bold(value)
+                EditorAction.Italic -> MarkdownEdit.italic(value)
+                EditorAction.Strike -> MarkdownEdit.strike(value)
+                EditorAction.InlineCode -> MarkdownEdit.code(value)
+            }
+        }
+    }
 
     val imeBottom = WindowInsets.ime.asPaddingValues().calculateBottomPadding()
     val navigationBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val toolbarInset = if (imeBottom > 0.dp) 0.dp else navigationBottom
 
+    val createdAt = stored?.createdAt ?: System.currentTimeMillis()
+    val tags = Markdown.tagsOf(body.text)
+    val metaText = buildString {
+        append(NoteDate.full(createdAt))
+        append(" · ")
+        append(Markdown.charCount(body.text))
+        append(" 字")
+        if (tags.isNotEmpty()) {
+            append(" · ")
+            tags.forEach { tag -> append('#').append(tag).append(' ') }
+        }
+    }.trimEnd()
+
+    val titleStyle = MaterialTheme.typography.headlineSmall.copy(
+        fontWeight = FontWeight.Normal,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    val metaStyle = MaterialTheme.typography.labelSmall
+    val bodyStyle = TextStyle(
+        fontFamily = FontFamily.Monospace,
+        fontSize = AppState.editorTextSize.bodySp.sp,
+        lineHeight = (AppState.editorTextSize.bodySp * 1.7f).sp,
+        color = MaterialTheme.colorScheme.onSurface,
+    )
+    val bodyPlaceholderStyle = MaterialTheme.typography.bodyMedium.copy(
+        fontSize = AppState.editorTextSize.bodySp.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+
     ExpressiveScaffold(
         modifier = Modifier.imePadding(),
+        containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
             TopAppBar(
                 title = { Text(if (preview) "预览" else "编辑") },
@@ -189,33 +225,18 @@ fun MaterialNoteEditorScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    containerColor = MaterialTheme.colorScheme.surface,
                 ),
             )
         },
         bottomBar = {
             if (!preview) {
-                Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = toolbarInset)
-                            .horizontalScroll(rememberScrollState())
-                            .padding(horizontal = 8.dp, vertical = 2.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        FormatButton("#") { format { MarkdownEdit.heading(it) } }
-                        FormatButton("*") { format { MarkdownEdit.bold(it) } }
-                        FormatButton("_") { format { MarkdownEdit.italic(it) } }
-                        FormatButton("~") { format { MarkdownEdit.strike(it) } }
-                        FormatButton("-") { format { MarkdownEdit.bullet(it) } }
-                        FormatButton("[") { format { MarkdownEdit.task(it) } }
-                        FormatButton(">") { format { MarkdownEdit.quote(it) } }
-                        FormatButton(MarkdownTokens.TICK) { format { MarkdownEdit.code(it) } }
-                        FormatButton("{") { format { MarkdownEdit.codeBlock(it) } }
-                        FormatButton("@") { format { MarkdownEdit.link(it) } }
-                    }
-                }
+                FloatingFormatBar(
+                    formatMode = formatMode,
+                    bottomInset = toolbarInset,
+                    onToggleFormatMode = { formatMode = !formatMode },
+                    onAction = { apply(it) },
+                )
             }
         },
         contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
@@ -224,8 +245,10 @@ fun MaterialNoteEditorScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp),
+                .then(if (preview) Modifier.navigationBarsPadding() else Modifier)
+                .padding(horizontal = 20.dp),
         ) {
+            Spacer(Modifier.height(8.dp))
             if (preview) {
                 Column(
                     modifier = Modifier
@@ -233,146 +256,82 @@ fun MaterialNoteEditorScreen(
                         .weight(1f)
                         .verticalScroll(rememberScrollState()),
                 ) {
-                    Spacer(Modifier.height(8.dp))
                     Text(
-                        text = title.ifBlank { Markdown.titleOf(body.text) }.ifBlank { "未命名笔记" },
-                        style = MaterialTheme.typography.headlineMedium,
+                        text = title.ifBlank { Markdown.titleOf(body.text) }
+                            .ifBlank { "未命名笔记" },
+                        style = titleStyle,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = "${Markdown.charCount(body.text)} 字 · " +
-                            Markdown.tagsOf(body.text).joinToString(" ") { "#$it" },
-                        style = MaterialTheme.typography.labelSmall,
+                        text = metaText,
+                        style = metaStyle,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                     Spacer(Modifier.height(16.dp))
                     MaterialMarkdown(markdown = body.text)
                     Spacer(Modifier.height(32.dp))
                 }
             } else {
-                Spacer(Modifier.height(6.dp))
-                Row(
+                BasicTextField(
+                    value = title,
+                    onValueChange = {
+                        title = it
+                        store(it, body.text)
+                    },
+                    singleLine = true,
+                    textStyle = titleStyle,
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    // The title is the note's level-one heading; the marker is visual only.
-                    Text(
-                        text = "#",
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                        ),
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(end = 8.dp),
-                    )
-                    BasicTextField(
-                        value = title,
-                        onValueChange = {
-                            title = it
-                            store(it, body.text)
-                        },
-                        singleLine = true,
-                        textStyle = MaterialTheme.typography.headlineMedium.copy(
-                            color = MaterialTheme.colorScheme.onSurface,
-                        ),
-                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                        modifier = Modifier.weight(1f),
-                        decorationBox = { innerTextField ->
-                            Box {
-                                if (title.isEmpty()) {
-                                    Text(
-                                        text = "标题",
-                                        style = MaterialTheme.typography.headlineMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                                innerTextField()
+                    decorationBox = { innerTextField ->
+                        Box {
+                            if (title.isEmpty()) {
+                                Text(
+                                    text = "未命名笔记",
+                                    style = titleStyle,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                )
                             }
-                        },
-                    )
-                }
+                            innerTextField()
+                        }
+                    },
+                )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "${Markdown.charCount(body.text)} 字 · " +
-                        Markdown.tagsOf(body.text).joinToString(" ") { "#$it" },
-                    style = MaterialTheme.typography.labelSmall,
+                    text = metaText,
+                    style = metaStyle,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
-                Spacer(Modifier.height(10.dp))
-                Surface(
+                Spacer(Modifier.height(8.dp))
+                BasicTextField(
+                    value = body,
+                    onValueChange = {
+                        body = it
+                        store(title, it.text)
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),
-                    shape = pageShape,
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                ) {
-                    BoxWithConstraints(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(pageShape),
-                    ) {
-                        val minimumFieldHeight = (maxHeight - pageTopPadding - pageBottomPadding)
-                            .coerceAtLeast(bodyLineHeightDp)
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .verticalScroll(pageScroll)
-                                .drawBehind {
-                                    // Part of the scrolling content, so the rules scroll and
-                                    // stretch with the text instead of behaving like a fixed plate.
-                                    val step = bodyLineHeightPx
-                                    if (step <= 0f) return@drawBehind
-                                    val inset = pageLineInset.toPx()
-                                    var y = pageTopPadding.toPx()
-                                    while (y <= size.height) {
-                                        drawLine(
-                                            color = ruleColor,
-                                            start = Offset(inset, y),
-                                            end = Offset(size.width - inset, y),
-                                            strokeWidth = 1.dp.toPx(),
-                                        )
-                                        y += step
-                                    }
-                                }
-                                .padding(
-                                    start = 14.dp,
-                                    end = 14.dp,
-                                    top = pageTopPadding,
-                                    bottom = pageBottomPadding,
-                                ),
-                        ) {
-                            BasicTextField(
-                                value = body,
-                                onValueChange = {
-                                    body = it
-                                    store(title, it.text)
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(min = minimumFieldHeight),
-                                textStyle = TextStyle(
-                                    fontFamily = FontFamily.Monospace,
-                                    fontSize = AppState.editorTextSize.bodySp.sp,
-                                    lineHeight = bodyLineHeight,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                ),
-                                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                                visualTransformation = highlight,
-                                decorationBox = { innerTextField ->
-                                    Box {
-                                        if (body.text.isEmpty()) {
-                                            Text(
-                                                text = "开始写 Markdown…",
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            )
-                                        }
-                                        innerTextField()
-                                    }
-                                },
-                            )
+                    textStyle = bodyStyle,
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    visualTransformation = highlight,
+                    decorationBox = { innerTextField ->
+                        Box {
+                            if (body.text.isEmpty()) {
+                                Text(
+                                    text = "开始书写…",
+                                    style = bodyPlaceholderStyle,
+                                )
+                            }
+                            innerTextField()
                         }
-                    }
-                }
+                    },
+                )
             }
         }
     }
@@ -443,11 +402,85 @@ fun MaterialNoteEditorScreen(
 }
 
 @Composable
-private fun FormatButton(label: String, onClick: () -> Unit) {
-    TextButton(
-        onClick = onClick,
-        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+private fun FloatingFormatBar(
+    formatMode: Boolean,
+    bottomInset: Dp,
+    onToggleFormatMode: () -> Unit,
+    onAction: (EditorAction) -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .padding(bottom = bottomInset + 10.dp),
+        contentAlignment = Alignment.Center,
     ) {
-        Text(label, style = MaterialTheme.typography.labelLarge)
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surface,
+            shadowElevation = 8.dp,
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 6.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (!formatMode) {
+                    ToolIcon(AppIcons.Task, "待办") { onAction(EditorAction.Task) }
+                    ToolIcon(AppIcons.BulletList, "列表") { onAction(EditorAction.Bullet) }
+                    ToolIcon(AppIcons.Quote, "引用") { onAction(EditorAction.Quote) }
+                    ToolIcon(AppIcons.CodeBlock, "代码块") { onAction(EditorAction.CodeBlock) }
+                    ToolIcon(AppIcons.Link, "链接") { onAction(EditorAction.Link) }
+                    ToolIcon(AppIcons.TextFormat, "文本格式", onToggleFormatMode)
+                } else {
+                    ToolIcon(AppIcons.Heading, "标题") { onAction(EditorAction.Heading) }
+                    ToolIcon(AppIcons.Bold, "粗体") { onAction(EditorAction.Bold) }
+                    ToolIcon(AppIcons.Italic, "斜体") { onAction(EditorAction.Italic) }
+                    ToolIcon(AppIcons.Strike, "删除线") { onAction(EditorAction.Strike) }
+                    ToolIcon(AppIcons.InlineCode, "行内代码") { onAction(EditorAction.InlineCode) }
+                    Box(
+                        modifier = Modifier
+                            .width(1.dp)
+                            .height(22.dp)
+                            .background(MaterialTheme.colorScheme.outlineVariant),
+                    )
+                    ToolIcon(AppIcons.Close, "收起格式", onToggleFormatMode)
+                }
+            }
+        }
     }
+}
+
+@Composable
+private fun ToolIcon(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+) {
+    IconButton(onClick = onClick) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            modifier = Modifier.size(22.dp),
+            tint = MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
+
+private enum class EditorAction {
+    Task,
+    Bullet,
+    Quote,
+    CodeBlock,
+    Link,
+    Heading,
+    Bold,
+    Italic,
+    Strike,
+    InlineCode,
 }
