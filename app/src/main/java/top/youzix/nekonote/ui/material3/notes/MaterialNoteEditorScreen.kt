@@ -51,7 +51,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -147,6 +151,12 @@ fun MaterialNoteEditorScreen(
         muted = MaterialTheme.colorScheme.onSurfaceVariant,
     )
     val highlight = remember(highlightColors) { MarkdownVisualTransformation(highlightColors) }
+    val bodyLineHeight = (AppState.editorTextSize.bodySp * 1.7f).sp
+    val bodyLineHeightPx = with(LocalDensity.current) { bodyLineHeight.toPx() }
+    val pageTopPadding = 12.dp
+    val pageShape = RoundedCornerShape(16.dp)
+    val pageScroll = rememberScrollState()
+    val ruleColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
 
     val imeBottom = WindowInsets.ime.asPaddingValues().calculateBottomPadding()
     val navigationBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
@@ -190,15 +200,15 @@ fun MaterialNoteEditorScreen(
                         horizontalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
                         FormatButton("#") { format { MarkdownEdit.heading(it) } }
-                        FormatButton("**") { format { MarkdownEdit.bold(it) } }
-                        FormatButton("*") { format { MarkdownEdit.italic(it) } }
-                        FormatButton("~~") { format { MarkdownEdit.strike(it) } }
+                        FormatButton("*") { format { MarkdownEdit.bold(it) } }
+                        FormatButton("_") { format { MarkdownEdit.italic(it) } }
+                        FormatButton("~") { format { MarkdownEdit.strike(it) } }
                         FormatButton("-") { format { MarkdownEdit.bullet(it) } }
-                        FormatButton("- [ ]") { format { MarkdownEdit.task(it) } }
+                        FormatButton("[") { format { MarkdownEdit.task(it) } }
                         FormatButton(">") { format { MarkdownEdit.quote(it) } }
                         FormatButton(MarkdownTokens.TICK) { format { MarkdownEdit.code(it) } }
-                        FormatButton(MarkdownTokens.FENCE) { format { MarkdownEdit.codeBlock(it) } }
-                        FormatButton("[]()") { format { MarkdownEdit.link(it) } }
+                        FormatButton("{") { format { MarkdownEdit.codeBlock(it) } }
+                        FormatButton("@") { format { MarkdownEdit.link(it) } }
                     }
                 }
             }
@@ -287,33 +297,68 @@ fun MaterialNoteEditorScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = pageShape,
                     color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 ) {
-                    Box(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
-                        if (body.text.isEmpty()) {
-                            Text(
-                                text = "开始写 Markdown…",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        BasicTextField(
-                            value = body,
-                            onValueChange = {
-                                body = it
-                                store(title, it.text)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(pageShape)
+                            .drawBehind {
+                                // Ruled paper, shifted by the scroll offset so each rule stays
+                                // attached to the text line it divides.
+                                val step = bodyLineHeightPx
+                                if (step <= 0f) return@drawBehind
+                                val top = pageTopPadding.toPx()
+                                val shift = pageScroll.value.toFloat() % step
+                                var y = (top - shift + step) % step
+                                while (y <= size.height) {
+                                    drawLine(
+                                        color = ruleColor,
+                                        start = Offset(0f, y),
+                                        end = Offset(size.width, y),
+                                        strokeWidth = 1.dp.toPx(),
+                                    )
+                                    y += step
+                                }
                             },
-                            modifier = Modifier.fillMaxSize(),
-                            textStyle = TextStyle(
-                                fontFamily = FontFamily.Monospace,
-                                fontSize = AppState.editorTextSize.bodySp.sp,
-                                lineHeight = (AppState.editorTextSize.bodySp * 1.7f).sp,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            ),
-                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                            visualTransformation = highlight,
-                        )
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(pageScroll)
+                                .padding(horizontal = 14.dp, vertical = pageTopPadding),
+                        ) {
+                            BasicTextField(
+                                value = body,
+                                onValueChange = {
+                                    body = it
+                                    store(title, it.text)
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                textStyle = TextStyle(
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = AppState.editorTextSize.bodySp.sp,
+                                    lineHeight = bodyLineHeight,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                ),
+                                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                                visualTransformation = highlight,
+                                decorationBox = { innerTextField ->
+                                    Box {
+                                        if (body.text.isEmpty()) {
+                                            Text(
+                                                text = "开始写 Markdown…",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
+                                        innerTextField()
+                                    }
+                                },
+                            )
+                            Spacer(Modifier.height(48.dp))
+                        }
                     }
                 }
             }
