@@ -158,6 +158,7 @@ fun MaterialNoteEditorScreen(
     val bodyLineHeightDp = with(LocalDensity.current) { bodyLineHeight.toDp() }
     val pageTopPadding = 12.dp
     val pageBottomPadding = 32.dp
+    val pageLineInset = 10.dp
     val pageShape = RoundedCornerShape(16.dp)
     val pageScroll = rememberScrollState()
     val ruleColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
@@ -320,12 +321,13 @@ fun MaterialNoteEditorScreen(
                                     // stretch with the text instead of behaving like a fixed plate.
                                     val step = bodyLineHeightPx
                                     if (step <= 0f) return@drawBehind
+                                    val inset = pageLineInset.toPx()
                                     var y = pageTopPadding.toPx()
                                     while (y <= size.height) {
                                         drawLine(
                                             color = ruleColor,
-                                            start = Offset(0f, y),
-                                            end = Offset(size.width, y),
+                                            start = Offset(inset, y),
+                                            end = Offset(size.width - inset, y),
                                             strokeWidth = 1.dp.toPx(),
                                         )
                                         y += step
