@@ -79,7 +79,7 @@ fun MaterialTagsScreen(
             contentPadding = PaddingValues(
                 start = 16.dp,
                 end = 16.dp,
-                top = 4.dp,
+                top = paddingValues.calculateTopPadding() + 4.dp,
                 bottom = paddingValues.calculateBottomPadding() + outerPadding.calculateBottomPadding() + 24.dp,
             ),
             verticalArrangement = Arrangement.spacedBy(16.dp),

@@ -149,7 +149,10 @@ object NoteRepository {
             NoteSort.Created -> compareByDescending<Note> { it.createdAt }
             NoteSort.Title -> compareBy<Note> { it.displayTitle.lowercase() }
         }
-        return filtered.sortedWith(compareByDescending<Note> { it.pinned }.then(order))
+        // Boolean is not Comparable in Kotlin, so the pin flag is ordered as an int.
+        return filtered.sortedWith(
+            compareByDescending<Note> { if (it.pinned) 1 else 0 }.then(order),
+        )
     }
 
     fun pinned(): List<Note> = notes.filter { it.pinned }.sortedByDescending { it.updatedAt }
