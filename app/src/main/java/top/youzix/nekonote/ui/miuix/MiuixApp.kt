@@ -13,16 +13,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.add
-import androidx.compose.foundation.layout.displayCutout
-import androidx.compose.foundation.layout.only
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
@@ -39,16 +39,16 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import top.youzix.nekonote.AppState
 import top.youzix.nekonote.crash.CrashHandler
-import top.youzix.nekonote.demo.HomeTarget
+import top.youzix.nekonote.data.NoteRepository
 import top.youzix.nekonote.ui.AppIcons
 import top.youzix.nekonote.ui.UiEngine
 import top.youzix.nekonote.ui.UiEnginePrefs
 import top.youzix.nekonote.ui.miuix.about.AboutScreen
-import top.youzix.nekonote.ui.miuix.gallery.GalleryScreen
-import top.youzix.nekonote.ui.miuix.home.HomeScreen
 import top.youzix.nekonote.ui.miuix.licenses.LicensesScreen
-import top.youzix.nekonote.ui.miuix.list.ListScreen
 import top.youzix.nekonote.ui.miuix.liquid.FloatingBottomBar
+import top.youzix.nekonote.ui.miuix.notes.NoteEditorScreen
+import top.youzix.nekonote.ui.miuix.notes.NotesScreen
+import top.youzix.nekonote.ui.miuix.notes.TagsScreen
 import top.youzix.nekonote.ui.miuix.settings.SettingsScreen
 import top.youzix.nekonote.ui.nav.Route
 import top.youzix.nekonote.ui.rememberMainPagerState
@@ -68,10 +68,9 @@ import top.yukonga.miuix.kmp.nav.core.navBackStackOf
 import top.yukonga.miuix.kmp.nav.core.rememberNavSystemCornerRadius
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-const val TAB_HOME = 0
-const val TAB_LIST = 1
-const val TAB_GALLERY = 2
-const val TAB_SETTINGS = 3
+const val TAB_NOTES = 0
+const val TAB_TAGS = 1
+const val TAB_SETTINGS = 2
 
 /** The miuix engine: large-title app bar, a pager of tabs, and the liquid-glass bottom bar. */
 @Composable
@@ -96,13 +95,12 @@ fun MiuixShell(
     val useLiquidGlass = AppState.useBlur
     val navigationItems = remember {
         listOf(
-            NavigationItem(label = "首页", icon = AppIcons.Home),
-            NavigationItem(label = "列表", icon = AppIcons.List),
-            NavigationItem(label = "组件", icon = AppIcons.Gallery),
+            NavigationItem(label = "笔记", icon = AppIcons.Notes),
+            NavigationItem(label = "标签", icon = AppIcons.Tag),
             NavigationItem(label = "设置", icon = AppIcons.Settings),
         )
     }
-    val titles = remember { listOf("NekoNote", "列表", "组件", "设置") }
+    val titles = remember { listOf("笔记", "标签", "设置") }
 
     val pagerState = rememberPagerState(pageCount = { navigationItems.size })
     val mainPagerState = rememberMainPagerState(pagerState)
@@ -129,8 +127,8 @@ fun MiuixShell(
     }
 
     // ---- level-1 back: no second-level page is open, so back returns to the first tab ----
-    BackHandler(enabled = backStack.size == 1 && mainPagerState.selectedPage != 0) {
-        mainPagerState.animateToPage(0)
+    BackHandler(enabled = backStack.size == 1 && mainPagerState.selectedPage != TAB_NOTES) {
+        mainPagerState.animateToPage(TAB_NOTES)
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -152,9 +150,20 @@ fun MiuixShell(
                     engine = engine,
                     onEngineChange = onEngineChange,
                     onNotify = notify,
+                    onOpenNote = { navigator.push(Route.Editor(it)) },
+                    onNewNote = { navigator.push(Route.Editor(NoteRepository.newDraftId())) },
                     onOpenAbout = { navigator.push(Route.About) },
                     onOpenLicenses = { navigator.push(Route.Licenses) },
                     onTabSelected = { index -> mainPagerState.animateToPage(index) },
+                )
+            }
+
+            entry<Route.Editor> { route ->
+                LaunchedEffect(route.noteId) { CrashHandler.note("二级页面 编辑") }
+                NoteEditorScreen(
+                    noteId = route.noteId,
+                    onBack = { navigator.pop() },
+                    onNotify = notify,
                 )
             }
 
@@ -187,7 +196,7 @@ fun MiuixShell(
     }
 }
 
-/** Level one: the four tabs. Switching between them is a pager animation, nothing more. */
+/** Level one: the three tabs. Switching between them is a pager animation, nothing more. */
 @Composable
 private fun MiuixTabs(
     titles: List<String>,
@@ -200,6 +209,8 @@ private fun MiuixTabs(
     engine: UiEngine,
     onEngineChange: (UiEngine) -> Unit,
     onNotify: (String) -> Unit,
+    onOpenNote: (String) -> Unit,
+    onNewNote: () -> Unit,
     onOpenAbout: () -> Unit,
     onOpenLicenses: () -> Unit,
     onTabSelected: (Int) -> Unit,
@@ -250,19 +261,21 @@ private fun MiuixTabs(
                 userScrollEnabled = true,
             ) { page ->
                 when (page) {
-                    TAB_HOME -> HomeScreen(
+                    TAB_NOTES -> NotesScreen(
                         bottomPadding = bottomPadding,
-                        onOpenLink = { target ->
-                            when (target) {
-                                HomeTarget.Gallery -> onTabSelected(TAB_GALLERY)
-                                HomeTarget.Licenses -> onOpenLicenses()
-                            }
-                        },
+                        onOpenNote = onOpenNote,
+                        onNewNote = onNewNote,
+                        onNotify = onNotify,
                     )
 
-                    TAB_LIST -> ListScreen(bottomPadding = bottomPadding)
-
-                    TAB_GALLERY -> GalleryScreen(bottomPadding = bottomPadding)
+                    TAB_TAGS -> TagsScreen(
+                        bottomPadding = bottomPadding,
+                        onOpenTag = { tag ->
+                            AppState.noteTagFilter = tag
+                            onTabSelected(TAB_NOTES)
+                        },
+                        onOpenNote = onOpenNote,
+                    )
 
                     else -> SettingsScreen(
                         bottomPadding = bottomPadding,

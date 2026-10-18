@@ -226,7 +226,7 @@ fun MaterialAboutScreen(
 
             item {
                 Text(
-                    text = "AGPL-3.0 · 一个壳子 (･ω<)☆",
+                    text = "AGPL-3.0 · 写下来就算数 (･ω<)☆",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 28.dp, vertical = 12.dp),

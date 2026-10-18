@@ -13,10 +13,14 @@ import top.yukonga.miuix.kmp.nav.core.NavKey
  * Every second-level page the shell can show.
  *
  * The stack is in-memory (`navBackStackOf`), so keys do not have to be `@Serializable`; they are
- * `data object`s anyway, which keeps entry identity and saved state stable.
+ * `data object`s / `data class`es anyway, which keeps entry identity and saved state stable.
  */
 sealed interface Route : NavKey {
     data object Main : Route
+
+    /** A note being edited. A draft id that has no note yet becomes one on the first keystroke. */
+    data class Editor(val noteId: String) : Route
+
     data object About : Route
     data object Licenses : Route
 }

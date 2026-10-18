@@ -8,14 +8,16 @@ package top.youzix.nekonote
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import top.youzix.nekonote.data.EditorTextSize
+import top.youzix.nekonote.data.NoteSort
 import top.youzix.nekonote.ui.UiEngine
 import top.youzix.nekonote.ui.theme.ColorMode
 
 /**
- * Process-wide UI state for the shell.
+ * Process-wide state for the shell and the editor.
  *
- * This build is the interface only: the four tabs draw themselves and remember how the user wants
- * them drawn, and nothing behind them does anything.
+ * The note data itself lives in [top.youzix.nekonote.data.NoteRepository]; this object only holds
+ * the choices about how it is shown, all of which are persisted.
  */
 object AppState {
     /** Which engine draws the app; persisted on change via [top.youzix.nekonote.ui.UiEnginePrefs]. */
@@ -36,4 +38,21 @@ object AppState {
      * Kept in memory and on disk: the About page unlocks it by tapping the tagline seven times.
      */
     var debugMode by mutableStateOf(false)
+
+    /** The order of the note list below the pinned notes; persisted via NotePrefs. */
+    var noteSort by mutableStateOf(NoteSort.Updated)
+
+    /** The editor's body size; persisted via NotePrefs. */
+    var editorTextSize by mutableStateOf(EditorTextSize.Normal)
+
+    /** Whether the editor opens on the rendered preview instead of the Markdown source. */
+    var previewFirst by mutableStateOf(false)
+
+    /**
+     * The tag the note list is filtered by, or null for every note.
+     *
+     * The tags tab writes it and then switches to the notes tab; it is deliberately not persisted,
+     * because a filter the user cannot see is a filter they will think is a bug.
+     */
+    var noteTagFilter by mutableStateOf<String?>(null)
 }

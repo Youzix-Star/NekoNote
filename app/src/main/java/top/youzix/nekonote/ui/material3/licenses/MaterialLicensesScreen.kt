@@ -53,6 +53,11 @@ fun MaterialLicensesScreen(onBack: () -> Unit, useBlur: Boolean) {
                 "https://github.com/Youzix-Star/NekoNote",
             ),
             LicenseEntry(
+                "NekoUi（界面框架，本项目由其复制而来）",
+                "AGPL-3.0",
+                "https://github.com/Youzix-Star/NekoUi",
+            ),
+            LicenseEntry(
                 "NekoPlus（界面框架来源）",
                 "AGPL-3.0",
                 "https://github.com/Youzix-Star/NekoPlus",

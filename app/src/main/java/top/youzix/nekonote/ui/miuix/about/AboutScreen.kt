@@ -214,7 +214,7 @@ private fun AboutContent(
 
         item(key = "footer") {
             Text(
-                text = "AGPL-3.0 · 一个壳子 (･ω<)☆",
+                text = "AGPL-3.0 · 写下来就算数 (･ω<)☆",
                 style = MiuixTheme.textStyles.footnote2,
                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),

@@ -8,8 +8,14 @@ package top.youzix.nekonote
 import android.app.Application
 import android.os.Build
 import top.youzix.nekonote.crash.CrashHandler
+import top.youzix.nekonote.data.NoteRepository
 
-/** Installs the crash recorder before anything else in the app has a chance to fail. */
+/**
+ * Installs the crash recorder and opens the note store before anything else can fail.
+ *
+ * Both belong here rather than in the activity: the notes are the app, and a process that starts
+ * without them would have to be able to run a list with no data.
+ */
 class NekoNoteApp : Application() {
     override fun onCreate() {
         super.onCreate()
@@ -17,6 +23,7 @@ class NekoNoteApp : Application() {
         // failure on that screen open another crash screen, and so on.
         if (isCrashProcess()) return
         CrashHandler.install(this)
+        NoteRepository.init(this)
         CrashHandler.note("应用启动")
     }
 

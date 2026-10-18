@@ -9,23 +9,32 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.automirrored.rounded.Article
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Code
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.rounded.List
 import androidx.compose.material.icons.rounded.BlurOn
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.PushPin
+import androidx.compose.material.icons.rounded.Sort
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Widgets
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Notes
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material.icons.rounded.SystemUpdate
+import androidx.compose.material.icons.rounded.Tag
+import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.PhoneAndroid
 import androidx.compose.material.icons.rounded.Refresh
@@ -70,6 +79,17 @@ object AppIcons {
     val Update: ImageVector = Icons.Rounded.SystemUpdate
     val Play: ImageVector = Icons.Rounded.PlayArrow
     val Pause: ImageVector = Icons.Rounded.Stop
+
+    // NekoNote: note list, editor and tag pages.
+    val Add: ImageVector = Icons.Rounded.Add
+    val Edit: ImageVector = Icons.Rounded.Edit
+    val Preview: ImageVector = Icons.Rounded.Visibility
+    val Pin: ImageVector = Icons.Rounded.PushPin
+    val Delete: ImageVector = Icons.Rounded.Delete
+    val More: ImageVector = Icons.Rounded.MoreVert
+    val Sort: ImageVector = Icons.Rounded.Sort
+    val Tag: ImageVector = Icons.Rounded.Tag
+    val Notes: ImageVector = Icons.Rounded.Notes
 
     val Refresh: ImageVector = Icons.Rounded.Refresh
     val Back: ImageVector = Icons.AutoMirrored.Rounded.ArrowBack

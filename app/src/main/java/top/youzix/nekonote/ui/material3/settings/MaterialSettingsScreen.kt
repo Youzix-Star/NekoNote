@@ -31,6 +31,10 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import top.youzix.nekonote.AppState
+import top.youzix.nekonote.data.EditorTextSize
+import top.youzix.nekonote.data.NotePrefs
+import top.youzix.nekonote.data.NoteRepository
+import top.youzix.nekonote.data.NoteSort
 import top.youzix.nekonote.ui.AppIcons
 import top.youzix.nekonote.ui.UiEngine
 import top.youzix.nekonote.ui.UiEnginePrefs
@@ -53,6 +57,8 @@ fun MaterialSettingsScreen(
 ) {
     val context = LocalContext.current
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val noteCount = NoteRepository.noteCount()
+    val tagCount = NoteRepository.tags().size
 
     ExpressiveScaffold(
         modifier = Modifier
@@ -113,18 +119,90 @@ fun MaterialSettingsScreen(
 
             SegmentedColumn(
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 13.dp),
+                title = "编辑器",
+            ) {
+                item {
+                    SegmentedDropdownItem(
+                        icon = AppIcons.Edit,
+                        title = "字号",
+                        summary = "编辑和预览的正文字号",
+                        items = EditorTextSize.entries.map { it.label },
+                        selectedIndex = EditorTextSize.entries
+                            .indexOf(AppState.editorTextSize)
+                            .coerceAtLeast(0),
+                        onItemSelected = { index ->
+                            EditorTextSize.entries.getOrNull(index)?.let {
+                                AppState.editorTextSize = it
+                                NotePrefs.saveTextSize(context, it)
+                            }
+                        },
+                    )
+                }
+                item {
+                    SegmentedSwitchItem(
+                        icon = AppIcons.Preview,
+                        title = "打开时先看预览",
+                        summary = "关掉就直接进 Markdown 源码",
+                        checked = AppState.previewFirst,
+                        onCheckedChange = {
+                            AppState.previewFirst = it
+                            NotePrefs.savePreviewFirst(context, it)
+                        },
+                    )
+                }
+                item {
+                    SegmentedDropdownItem(
+                        icon = AppIcons.Sort,
+                        title = "默认排序",
+                        summary = "置顶的笔记始终在最前面",
+                        items = NoteSort.entries.map { it.label },
+                        selectedIndex = NoteSort.entries
+                            .indexOf(AppState.noteSort)
+                            .coerceAtLeast(0),
+                        onItemSelected = { index ->
+                            NoteSort.entries.getOrNull(index)?.let {
+                                AppState.noteSort = it
+                                NotePrefs.saveSort(context, it)
+                            }
+                        },
+                    )
+                }
+            }
+
+            SegmentedColumn(
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 13.dp),
                 title = "引擎",
             ) {
                 item {
                     SegmentedDropdownItem(
-                        icon = AppIcons.Gallery,
+                        icon = AppIcons.Notes,
                         title = "界面引擎",
-                        summary = "换一套皮",
+                        summary = "换一套皮，笔记不变",
                         items = UiEngine.entries.map { it.label },
                         selectedIndex = UiEngine.entries.indexOf(engine).coerceAtLeast(0),
                         onItemSelected = { index ->
                             UiEngine.entries.getOrNull(index)?.let(onEngineChange)
                         },
+                    )
+                }
+            }
+
+            SegmentedColumn(
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 13.dp),
+                title = "数据",
+            ) {
+                item {
+                    SegmentedListItem(
+                        headlineContent = { Text("笔记与标签") },
+                        supportingContent = { Text("$noteCount 条笔记 · $tagCount 个标签") },
+                        leadingContent = { IconTile(AppIcons.Notes, "笔记与标签") },
+                    )
+                }
+                item {
+                    SegmentedListItem(
+                        headlineContent = { Text("存储位置") },
+                        supportingContent = { Text(NoteRepository.storagePath()) },
+                        leadingContent = { IconTile(AppIcons.License, "存储位置") },
                     )
                 }
             }

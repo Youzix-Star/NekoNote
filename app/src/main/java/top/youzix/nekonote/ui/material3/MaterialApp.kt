@@ -20,14 +20,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.automirrored.outlined.List
-import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Widgets
-import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.filled.Tag
+import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Widgets
+import androidx.compose.material.icons.outlined.Tag
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -45,14 +43,14 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import top.youzix.nekonote.AppState
 import top.youzix.nekonote.crash.CrashHandler
-import top.youzix.nekonote.demo.HomeTarget
+import top.youzix.nekonote.data.NoteRepository
 import top.youzix.nekonote.ui.UiEngine
 import top.youzix.nekonote.ui.UiEnginePrefs
 import top.youzix.nekonote.ui.material3.about.MaterialAboutScreen
-import top.youzix.nekonote.ui.material3.gallery.MaterialGalleryScreen
-import top.youzix.nekonote.ui.material3.home.MaterialHomeScreen
 import top.youzix.nekonote.ui.material3.licenses.MaterialLicensesScreen
-import top.youzix.nekonote.ui.material3.list.MaterialListScreen
+import top.youzix.nekonote.ui.material3.notes.MaterialNoteEditorScreen
+import top.youzix.nekonote.ui.material3.notes.MaterialNotesScreen
+import top.youzix.nekonote.ui.material3.notes.MaterialTagsScreen
 import top.youzix.nekonote.ui.material3.settings.MaterialSettingsScreen
 import top.youzix.nekonote.ui.material3.widgets.SwipeableSnackbarHost
 import top.youzix.nekonote.ui.nav.Route
@@ -63,10 +61,9 @@ import top.yukonga.miuix.kmp.nav.core.NavDisplayEffects
 import top.yukonga.miuix.kmp.nav.core.navBackStackOf
 import top.yukonga.miuix.kmp.nav.core.rememberNavSystemCornerRadius
 
-private const val TAB_HOME = 0
-private const val TAB_LIST = 1
-private const val TAB_GALLERY = 2
-private const val TAB_SETTINGS = 3
+private const val TAB_NOTES = 0
+private const val TAB_TAGS = 1
+private const val TAB_SETTINGS = 2
 
 @Composable
 fun MaterialApp() {
@@ -87,13 +84,11 @@ private fun MaterialShell(
     engine: UiEngine,
     onEngineChange: (UiEngine) -> Unit,
 ) {
-    val context = LocalContext.current
-    val labels = listOf("首页", "列表", "组件", "设置")
+    val labels = listOf("笔记", "标签", "设置")
     // Filled icon while selected, outlined while not: SukiSU's bar switches between the two.
     val navItems = listOf(
-        MaterialNavItem("首页", Icons.Filled.Home, Icons.Outlined.Home),
-        MaterialNavItem("列表", Icons.AutoMirrored.Filled.List, Icons.AutoMirrored.Outlined.List),
-        MaterialNavItem("组件", Icons.Filled.Widgets, Icons.Outlined.Widgets),
+        MaterialNavItem("笔记", Icons.Filled.Description, Icons.Outlined.Description),
+        MaterialNavItem("标签", Icons.Filled.Tag, Icons.Outlined.Tag),
         MaterialNavItem("设置", Icons.Filled.Settings, Icons.Outlined.Settings),
     )
 
@@ -115,8 +110,8 @@ private fun MaterialShell(
     }
 
     // ---- level-1 back: no second-level page is open, so back returns to the first tab ----
-    BackHandler(enabled = backStack.size == 1 && mainPagerState.selectedPage != 0) {
-        mainPagerState.animateToPage(0)
+    BackHandler(enabled = backStack.size == 1 && mainPagerState.selectedPage != TAB_NOTES) {
+        mainPagerState.animateToPage(TAB_NOTES)
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -131,8 +126,6 @@ private fun MaterialShell(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer,
                     // Only the bottom bar's height leaves this scaffold: each page owns its own
                     // app bar and its own window insets, exactly like SukiSU's page scaffolds.
-                    // Letting this one add the status-bar inset too is what put an extra
-                    // status-bar-height gap under every page's title.
                     contentWindowInsets = WindowInsets(0, 0, 0, 0),
                     bottomBar = {
                         // Driven by selectedPage, not the pager's currentPage, so the highlight
@@ -150,19 +143,23 @@ private fun MaterialShell(
                         userScrollEnabled = true,
                     ) { page ->
                         when (page) {
-                            TAB_HOME -> MaterialHomeScreen(
+                            TAB_NOTES -> MaterialNotesScreen(
                                 outerPadding = outerPadding,
-                                onOpenLink = { target ->
-                                    when (target) {
-                                        HomeTarget.Gallery -> mainPagerState.animateToPage(TAB_GALLERY)
-                                        HomeTarget.Licenses -> navigator.push(Route.Licenses)
-                                    }
+                                onOpenNote = { navigator.push(Route.Editor(it)) },
+                                onNewNote = {
+                                    navigator.push(Route.Editor(NoteRepository.newDraftId()))
                                 },
+                                onNotify = notify,
                             )
 
-                            TAB_LIST -> MaterialListScreen(outerPadding = outerPadding)
-
-                            TAB_GALLERY -> MaterialGalleryScreen(outerPadding = outerPadding)
+                            TAB_TAGS -> MaterialTagsScreen(
+                                outerPadding = outerPadding,
+                                onOpenTag = { tag ->
+                                    AppState.noteTagFilter = tag
+                                    mainPagerState.animateToPage(TAB_NOTES)
+                                },
+                                onOpenNote = { navigator.push(Route.Editor(it)) },
+                            )
 
                             TAB_SETTINGS -> MaterialSettingsScreen(
                                 outerPadding = outerPadding,
@@ -174,6 +171,15 @@ private fun MaterialShell(
                         }
                     }
                 }
+            }
+
+            entry<Route.Editor> { route ->
+                LaunchedEffect(route.noteId) { CrashHandler.note("二级页面 编辑") }
+                MaterialNoteEditorScreen(
+                    noteId = route.noteId,
+                    onBack = { navigator.pop() },
+                    onNotify = notify,
+                )
             }
 
             entry<Route.About> {
