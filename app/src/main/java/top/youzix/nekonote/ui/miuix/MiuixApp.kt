@@ -220,6 +220,7 @@ private fun MiuixTabs(
     onNewNote: () -> Unit,
     onOpenAbout: () -> Unit,
     onOpenLicenses: () -> Unit,
+    onOpenFonts: () -> Unit,
     onTabSelected: (Int) -> Unit,
 ) {
     // Each page owns its own top bar (SukiSU does the same), so this Scaffold only owns the
@@ -290,6 +291,7 @@ private fun MiuixTabs(
                         onEngineChange = onEngineChange,
                         onOpenAbout = onOpenAbout,
                         onOpenLicenses = onOpenLicenses,
+                        onOpenFonts = onOpenFonts,
                     )
                 }
             }
