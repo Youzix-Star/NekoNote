@@ -155,6 +155,7 @@ fun MaterialNoteEditorScreen(
     val highlight = remember(highlightColors) { MarkdownVisualTransformation(highlightColors) }
     val bodyLineHeight = (AppState.editorTextSize.bodySp * 1.7f).sp
     val bodyLineHeightPx = with(LocalDensity.current) { bodyLineHeight.toPx() }
+    val bodyLineHeightDp = with(LocalDensity.current) { bodyLineHeight.toDp() }
     val pageTopPadding = 12.dp
     val pageBottomPadding = 32.dp
     val pageShape = RoundedCornerShape(16.dp)
@@ -327,7 +328,7 @@ fun MaterialNoteEditorScreen(
                             },
                     ) {
                         val minimumFieldHeight = (maxHeight - pageTopPadding - pageBottomPadding)
-                            .coerceAtLeast(bodyLineHeight)
+                            .coerceAtLeast(bodyLineHeightDp)
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
