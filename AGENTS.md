@@ -35,7 +35,7 @@
 - 标题就是笔记的一级标题：编辑模式在标题框前画一个主题色的 `#`，这个符号只是视觉标记，不写进数据。
 - 编辑时的着色在 `markdown/MarkdownHighlight.kt`：只加 span、不改文本（`OffsetMapping.Identity`），两个引擎只负责传入自己的主题色。
 - 底栏工具每个按钮只显示一个原始符号（`#`、`*`、`~`、`-`、`[`、`{`、`@`…）；符号是外观，按下去插入的仍是完整 Markdown。反引号标签同源于 `MarkdownTokens`，不要另写一份字面量。
-- 编辑区的横线是笔记本式的：`drawBehind` 按正文 `lineHeight` 画浅色线，并按 `pageScroll.value` 偏移，所以横线和文字一起滚动。改行高时两处（TextStyle 与 pattern）必须一起改。
+- 编辑区的横线是笔记本式的：`drawBehind` 画在滚动内容上而不是固定卡片上，所以横线会跟文字一起滚动、拉伸和回弹；间距按正文 `lineHeight`。改行高时两处（TextStyle 与 pattern）必须一起改。
 - 空笔记（标题与正文都空）离开编辑器时会被删除；新建笔记在第一次输入时才真正落库。
 - 排序时置顶永远在最前；标签筛选存在 `AppState.noteTagFilter`，标签页点一下会把它带给笔记页。
 - 存储格式是 `{"version":1,"notes":[...]}`；改字段要兼容旧文件（解码用 `opt*`，缺字段给默认值）。

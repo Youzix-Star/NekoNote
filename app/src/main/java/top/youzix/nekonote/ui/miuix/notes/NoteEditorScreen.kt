@@ -214,7 +214,7 @@ fun NoteEditorScreen(
                             .padding(bottom = toolbarInset)
                             .horizontalScroll(rememberScrollState())
                             .padding(horizontal = 8.dp, vertical = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         FormatButton("#") { format { MarkdownEdit.heading(it) } }
                         FormatButton("*") { format { MarkdownEdit.bold(it) } }
@@ -315,25 +315,7 @@ fun NoteEditorScreen(
                         .fillMaxWidth()
                         .weight(1f)
                         .clip(pageShape)
-                        .background(colorScheme.surfaceContainer)
-                        .drawBehind {
-                            // Ruled paper: one faint line per text line, shifted by the scroll
-                            // offset so the rule and the line it belongs to move together.
-                            val step = bodyLineHeightPx
-                            if (step <= 0f) return@drawBehind
-                            val top = pageTopPadding.toPx()
-                            val shift = pageScroll.value.toFloat() % step
-                            var y = (top - shift + step) % step
-                            while (y <= size.height) {
-                                drawLine(
-                                    color = ruleColor,
-                                    start = Offset(0f, y),
-                                    end = Offset(size.width, y),
-                                    strokeWidth = 1.dp.toPx(),
-                                )
-                                y += step
-                            }
-                        },
+                        .background(colorScheme.surfaceContainer),
                 ) {
                     val minimumFieldHeight = (maxHeight - pageTopPadding - pageBottomPadding)
                         .coerceAtLeast(bodyLineHeightDp)
@@ -341,6 +323,22 @@ fun NoteEditorScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .verticalScroll(pageScroll)
+                            .drawBehind {
+                                // The rules are part of the scrolling page, not a layer pinned
+                                // to the card: they scroll, stretch and bounce with the text.
+                                val step = bodyLineHeightPx
+                                if (step <= 0f) return@drawBehind
+                                var y = pageTopPadding.toPx()
+                                while (y <= size.height) {
+                                    drawLine(
+                                        color = ruleColor,
+                                        start = Offset(0f, y),
+                                        end = Offset(size.width, y),
+                                        strokeWidth = 1.dp.toPx(),
+                                    )
+                                    y += step
+                                }
+                            }
                             .padding(
                                 start = 14.dp,
                                 end = 14.dp,
@@ -461,9 +459,9 @@ private fun FormatButton(label: String, onClick: () -> Unit) {
     TextButton(
         text = label,
         onClick = onClick,
-        minHeight = 36.dp,
-        minWidth = 0.dp,
-        insideMargin = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+        minHeight = 38.dp,
+        minWidth = 44.dp,
+        insideMargin = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
         textStyle = MiuixTheme.textStyles.footnote1,
     )
 }

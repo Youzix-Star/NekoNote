@@ -201,7 +201,7 @@ fun MaterialNoteEditorScreen(
                             .padding(bottom = toolbarInset)
                             .horizontalScroll(rememberScrollState())
                             .padding(horizontal = 8.dp, vertical = 2.dp),
-                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         FormatButton("#") { format { MarkdownEdit.heading(it) } }
                         FormatButton("*") { format { MarkdownEdit.bold(it) } }
@@ -307,25 +307,7 @@ fun MaterialNoteEditorScreen(
                     BoxWithConstraints(
                         modifier = Modifier
                             .fillMaxSize()
-                            .clip(pageShape)
-                            .drawBehind {
-                                // Ruled paper, shifted by the scroll offset so each rule stays
-                                // attached to the text line it divides.
-                                val step = bodyLineHeightPx
-                                if (step <= 0f) return@drawBehind
-                                val top = pageTopPadding.toPx()
-                                val shift = pageScroll.value.toFloat() % step
-                                var y = (top - shift + step) % step
-                                while (y <= size.height) {
-                                    drawLine(
-                                        color = ruleColor,
-                                        start = Offset(0f, y),
-                                        end = Offset(size.width, y),
-                                        strokeWidth = 1.dp.toPx(),
-                                    )
-                                    y += step
-                                }
-                            },
+                            .clip(pageShape),
                     ) {
                         val minimumFieldHeight = (maxHeight - pageTopPadding - pageBottomPadding)
                             .coerceAtLeast(bodyLineHeightDp)
@@ -333,6 +315,22 @@ fun MaterialNoteEditorScreen(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .verticalScroll(pageScroll)
+                                .drawBehind {
+                                    // Part of the scrolling content, so the rules scroll and
+                                    // stretch with the text instead of behaving like a fixed plate.
+                                    val step = bodyLineHeightPx
+                                    if (step <= 0f) return@drawBehind
+                                    var y = pageTopPadding.toPx()
+                                    while (y <= size.height) {
+                                        drawLine(
+                                            color = ruleColor,
+                                            start = Offset(0f, y),
+                                            end = Offset(size.width, y),
+                                            strokeWidth = 1.dp.toPx(),
+                                        )
+                                        y += step
+                                    }
+                                }
                                 .padding(
                                     start = 14.dp,
                                     end = 14.dp,
