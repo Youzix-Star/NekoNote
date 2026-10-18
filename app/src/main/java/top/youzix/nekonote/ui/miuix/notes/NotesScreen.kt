@@ -47,6 +47,7 @@ import top.youzix.nekonote.data.NoteSort
 import top.youzix.nekonote.ui.AppIcons
 import top.youzix.nekonote.ui.miuix.components.BlurredBar
 import top.youzix.nekonote.ui.miuix.components.SearchField
+import top.youzix.nekonote.ui.miuix.components.StatusTag
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Card
@@ -292,14 +293,26 @@ private fun NoteCard(
                 )
             }
             if (note.tags.isNotEmpty()) {
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = note.tags.joinToString("  ") { "#$it" },
-                    style = MiuixTheme.textStyles.footnote2,
-                    color = colorScheme.primary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Spacer(Modifier.height(6.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    note.tags.take(3).forEach { tag ->
+                        StatusTag(
+                            label = tagLabel(tag),
+                            backgroundColor = colorScheme.secondaryContainer,
+                            contentColor = colorScheme.onSecondaryContainer,
+                        )
+                    }
+                    if (note.tags.size > 3) {
+                        Text(
+                            text = "+${note.tags.size - 3}",
+                            style = MiuixTheme.textStyles.footnote2,
+                            color = colorScheme.onSurfaceVariantSummary,
+                        )
+                    }
+                }
             }
         }
     }
@@ -336,3 +349,7 @@ private fun EmptyNotes(hasQuery: Boolean, onNewNote: () -> Unit) {
         }
     }
 }
+
+/** Keeps a long tag from pushing the rest of the row off the card. */
+private fun tagLabel(tag: String): String =
+    if (tag.length <= 12) "#$tag" else "#${tag.take(11)}…"

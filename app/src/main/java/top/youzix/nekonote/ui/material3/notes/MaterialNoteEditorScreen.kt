@@ -8,6 +8,7 @@
 package top.youzix.nekonote.ui.material3.notes
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -73,6 +74,7 @@ import top.youzix.nekonote.markdown.MarkdownHighlightColors
 import top.youzix.nekonote.markdown.MarkdownVisualTransformation
 import top.youzix.nekonote.ui.AppIcons
 import top.youzix.nekonote.ui.material3.components.ExpressiveScaffold
+import top.youzix.nekonote.ui.material3.components.StatusTag
 
 /**
  * The editor, Material flavour: same borderless page and floating two-state icon pill as the
@@ -88,6 +90,9 @@ fun MaterialNoteEditorScreen(
     var title by rememberSaveable(noteId) { mutableStateOf(stored?.title.orEmpty()) }
     var body by rememberSaveable(noteId, stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(stored?.body.orEmpty()))
+    }
+    var tagsText by rememberSaveable(noteId) {
+        mutableStateOf(Markdown.formatTags(stored?.tags.orEmpty()))
     }
     var preview by rememberSaveable(noteId) { mutableStateOf(AppState.previewFirst) }
     var formatMode by rememberSaveable(noteId) { mutableStateOf(false) }
@@ -108,15 +113,18 @@ fun MaterialNoteEditorScreen(
     val highlight = remember(highlightColors) { MarkdownVisualTransformation(highlightColors) }
     val latestTitle = rememberUpdatedState(title)
     val latestBody = rememberUpdatedState(body.text)
+    val latestTags = rememberUpdatedState(tagsText)
     val latestDeleted = rememberUpdatedState(deleted)
 
-    fun store(newTitle: String, newBody: String) {
-        if (!deleted) NoteRepository.touch(noteId, newTitle, newBody)
+    fun store(newTitle: String, newBody: String, newTags: List<String>) {
+        if (!deleted) NoteRepository.touch(noteId, newTitle, newBody, newTags)
     }
 
-    LaunchedEffect(title, body.text) {
+    LaunchedEffect(title, body.text, tagsText) {
         if (deleted) return@LaunchedEffect
-        if (title.isBlank() && body.text.isBlank()) return@LaunchedEffect
+        if (title.isBlank() && body.text.isBlank() && Markdown.parseTags(tagsText).isEmpty()) {
+            return@LaunchedEffect
+        }
         delay(700)
         NoteRepository.persist()
     }
@@ -126,21 +134,23 @@ fun MaterialNoteEditorScreen(
             if (latestDeleted.value) return@onDispose
             val finalTitle = latestTitle.value
             val finalBody = latestBody.value
-            if (finalTitle.isBlank() && finalBody.isBlank()) {
+            val finalTags = Markdown.parseTags(latestTags.value)
+            if (finalTitle.isBlank() && finalBody.isBlank() && finalTags.isEmpty()) {
                 NoteRepository.delete(noteId)
             } else {
-                NoteRepository.touch(noteId, finalTitle, finalBody)
+                NoteRepository.touch(noteId, finalTitle, finalBody, finalTags)
                 NoteRepository.persist()
             }
         }
     }
 
     fun finish() {
+        val finalTags = Markdown.parseTags(tagsText)
         if (!deleted) {
-            if (title.isBlank() && body.text.isBlank()) {
+            if (title.isBlank() && body.text.isBlank() && finalTags.isEmpty()) {
                 NoteRepository.delete(noteId)
             } else {
-                NoteRepository.touch(noteId, title, body.text)
+                NoteRepository.touch(noteId, title, body.text, finalTags)
                 NoteRepository.persist()
             }
         }
@@ -149,7 +159,7 @@ fun MaterialNoteEditorScreen(
 
     fun format(transform: (TextFieldValue) -> TextFieldValue) {
         body = transform(body)
-        store(title, body.text)
+        store(title, body.text, Markdown.parseTags(tagsText))
     }
 
     fun apply(action: EditorAction) {
@@ -174,21 +184,15 @@ fun MaterialNoteEditorScreen(
     val toolbarInset = if (imeBottom > 0.dp) 0.dp else navigationBottom
 
     val createdAt = stored?.createdAt ?: System.currentTimeMillis()
-    val tags = Markdown.tagsOf(body.text)
-    val metaText = buildString {
-        append(NoteDate.full(createdAt))
-        append(" · ")
-        append(Markdown.charCount(body.text))
-        append(" 字")
-        if (tags.isNotEmpty()) {
-            append(" · ")
-            tags.forEach { tag -> append('#').append(tag).append(' ') }
-        }
-    }.trimEnd()
+    val tags = Markdown.parseTags(tagsText)
+    val metaText = "${NoteDate.full(createdAt)} · ${Markdown.charCount(body.text)} 字"
 
     val titleStyle = MaterialTheme.typography.headlineSmall.copy(
-        fontWeight = FontWeight.Normal,
+        fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    val tagStyle = MaterialTheme.typography.labelLarge.copy(
+        color = MaterialTheme.colorScheme.primary,
     )
     val metaStyle = MaterialTheme.typography.labelSmall
     val bodyStyle = TextStyle(
@@ -263,6 +267,24 @@ fun MaterialNoteEditorScreen(
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
+                    if (tags.isNotEmpty()) {
+                        Spacer(Modifier.height(6.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            tags.forEach { tag ->
+                                StatusTag(
+                                    label = tagLabel(tag),
+                                    backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                )
+                            }
+                        }
+                    }
                     Spacer(Modifier.height(4.dp))
                     Text(
                         text = metaText,
@@ -280,7 +302,7 @@ fun MaterialNoteEditorScreen(
                     value = title,
                     onValueChange = {
                         title = it
-                        store(it, body.text)
+                        store(it, body.text, Markdown.parseTags(tagsText))
                     },
                     singleLine = true,
                     textStyle = titleStyle,
@@ -299,7 +321,31 @@ fun MaterialNoteEditorScreen(
                         }
                     },
                 )
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(2.dp))
+                BasicTextField(
+                    value = tagsText,
+                    onValueChange = {
+                        tagsText = it
+                        store(title, body.text, Markdown.parseTags(it))
+                    },
+                    singleLine = true,
+                    textStyle = tagStyle,
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    modifier = Modifier.fillMaxWidth(),
+                    decorationBox = { innerTextField ->
+                        Box {
+                            if (tagsText.isEmpty()) {
+                                Text(
+                                    text = "添加标签…",
+                                    style = tagStyle,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            innerTextField()
+                        }
+                    },
+                )
+                Spacer(Modifier.height(2.dp))
                 Text(
                     text = metaText,
                     style = metaStyle,
@@ -312,7 +358,7 @@ fun MaterialNoteEditorScreen(
                     value = body,
                     onValueChange = {
                         body = it
-                        store(title, it.text)
+                        store(title, it.text, Markdown.parseTags(tagsText))
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -350,7 +396,7 @@ fun MaterialNoteEditorScreen(
                     )
                     TextButton(
                         onClick = {
-                            store(title, body.text)
+                            store(title, body.text, Markdown.parseTags(tagsText))
                             NoteRepository.togglePin(noteId)
                             onNotify(if (pinned) "已取消置顶" else "已置顶")
                             showMenu = false
@@ -484,3 +530,7 @@ private enum class EditorAction {
     Strike,
     InlineCode,
 }
+
+/** Keeps a long tag from pushing the rest of the row off the card. */
+private fun tagLabel(tag: String): String =
+    if (tag.length <= 12) "#$tag" else "#${tag.take(11)}…"

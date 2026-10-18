@@ -15,6 +15,7 @@ import java.util.UUID
 import java.util.concurrent.Executors
 import org.json.JSONArray
 import org.json.JSONObject
+import top.youzix.nekonote.markdown.Markdown
 
 /** A tag and how many notes carry it. */
 data class TagCount(val tag: String, val count: Int)
@@ -64,17 +65,17 @@ object NoteRepository {
     fun find(id: String): Note? = notes.firstOrNull { it.id == id }
 
     /**
-     * Writes [title] and [body] into the note with [id], creating it when it is still a draft.
-     * Returns the stored note, or null when the store has not been initialised.
+     * Writes [title], [body] and [tags] into the note with [id], creating it when it is still a
+     * draft. Returns the stored note, or null when the store has not been initialised.
      */
-    fun touch(id: String, title: String, body: String): Note? {
+    fun touch(id: String, title: String, body: String, tags: List<String>): Note? {
         if (appContext == null) return null
         val index = notes.indexOfFirst { it.id == id }
         val now = System.currentTimeMillis()
         if (index >= 0) {
             val old = notes[index]
-            if (old.title == title && old.body == body) return old
-            val updated = old.copy(title = title, body = body, updatedAt = now)
+            if (old.title == title && old.body == body && old.tags == tags) return old
+            val updated = old.copy(title = title, body = body, tags = tags, updatedAt = now)
             notes[index] = updated
             return updated
         }
@@ -82,6 +83,7 @@ object NoteRepository {
             id = id,
             title = title,
             body = body,
+            tags = tags,
             pinned = false,
             createdAt = now,
             updatedAt = now,
@@ -91,12 +93,13 @@ object NoteRepository {
     }
 
     /** A brand new note, already stored. */
-    fun create(title: String = "", body: String = ""): Note {
+    fun create(title: String = "", body: String = "", tags: List<String> = emptyList()): Note {
         val now = System.currentTimeMillis()
         val note = Note(
             id = UUID.randomUUID().toString(),
             title = title,
             body = body,
+            tags = tags,
             pinned = false,
             createdAt = now,
             updatedAt = now,
@@ -141,7 +144,8 @@ object NoteRepository {
             val matchesTag = tag == null || note.tags.any { it.equals(tag, ignoreCase = true) }
             val matchesQuery = needle.isEmpty() ||
                 note.displayTitle.contains(needle, ignoreCase = true) ||
-                note.body.contains(needle, ignoreCase = true)
+                note.body.contains(needle, ignoreCase = true) ||
+                note.tags.any { it.contains(needle, ignoreCase = true) }
             matchesTag && matchesQuery
         }
         val order = when (sort) {
@@ -187,6 +191,9 @@ object NoteRepository {
                     put("id", note.id)
                     put("title", note.title)
                     put("body", note.body)
+                    val tagArray = JSONArray()
+                    note.tags.forEach { tag -> tagArray.put(tag) }
+                    put("tags", tagArray)
                     put("pinned", note.pinned)
                     put("createdAt", note.createdAt)
                     put("updatedAt", note.updatedAt)
@@ -209,10 +216,25 @@ object NoteRepository {
             val item = array.optJSONObject(index) ?: continue
             val id = item.optString("id").takeIf { it.isNotBlank() } ?: continue
             val created = item.optLong("createdAt", now)
+            val body = item.optString("body")
+            val tagArray = item.optJSONArray("tags")
+            // Old files had no tag list: derive it from the body's #标签 once, then store it.
+            val tags = if (tagArray != null) {
+                buildList {
+                    for (tagIndex in 0 until tagArray.length()) {
+                        tagArray.optString(tagIndex).trim()
+                            .takeIf { it.isNotEmpty() }
+                            ?.let { add(it) }
+                    }
+                }
+            } else {
+                Markdown.tagsOf(body)
+            }
             decoded += Note(
                 id = id,
                 title = item.optString("title"),
-                body = item.optString("body"),
+                body = body,
+                tags = tags,
                 pinned = item.optBoolean("pinned", false),
                 createdAt = created,
                 updatedAt = item.optLong("updatedAt", created),
@@ -233,6 +255,7 @@ object NoteRepository {
                 id = UUID.randomUUID().toString(),
                 title = "欢迎来到 NekoNote",
                 body = WELCOME,
+                tags = listOf("入门", "NekoNote"),
                 pinned = true,
                 createdAt = now - 2 * day,
                 updatedAt = now - 20 * 60 * 1000L,
@@ -241,6 +264,7 @@ object NoteRepository {
                 id = UUID.randomUUID().toString(),
                 title = "Markdown 速查",
                 body = CHEATSHEET,
+                tags = listOf("Markdown"),
                 pinned = false,
                 createdAt = now - 3 * day,
                 updatedAt = now - 3 * hour,
@@ -249,6 +273,7 @@ object NoteRepository {
                 id = UUID.randomUUID().toString(),
                 title = "今天吃什么",
                 body = TODOS,
+                tags = listOf("生活"),
                 pinned = false,
                 createdAt = now - day,
                 updatedAt = now - 5 * hour,
@@ -257,6 +282,7 @@ object NoteRepository {
                 id = UUID.randomUUID().toString(),
                 title = "慢慢来",
                 body = SLOW,
+                tags = listOf("随想", "句子"),
                 pinned = false,
                 createdAt = now - 5 * day,
                 updatedAt = now - 2 * day,

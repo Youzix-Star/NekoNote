@@ -392,6 +392,21 @@ object Markdown {
 
     fun charCount(markdown: String): Int = markdown.count { !it.isWhitespace() }
 
+    /** The editable tag line: tags rendered as `#a #b`. */
+    fun formatTags(tags: List<String>): String = tags.joinToString(" ") { "#$it" }
+
+    /**
+     * Parses the editable tag line. Accepts spaces, commas, Chinese commas and enumeration commas;
+     * a leading `#` is optional, and the result is distinct and capped so a paste cannot explode
+     * the tag list.
+     */
+    fun parseTags(text: String): List<String> = text
+        .split(' ', '\n', '\t', ',', '，', '、')
+        .map { it.trim().trimStart('#').trim() }
+        .filter { it.isNotEmpty() }
+        .distinct()
+        .take(24)
+
     /** The heading outline, for the editor's contents card. */
     fun headings(markdown: String): List<Pair<Int, String>> = parse(markdown)
         .filterIsInstance<MdBlock.Heading>()

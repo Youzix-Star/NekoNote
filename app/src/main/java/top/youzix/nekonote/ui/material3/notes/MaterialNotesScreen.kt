@@ -63,6 +63,7 @@ import top.youzix.nekonote.ui.material3.components.IconTile
 import top.youzix.nekonote.ui.material3.components.SearchAppBar
 import top.youzix.nekonote.ui.material3.components.SegmentedColumn
 import top.youzix.nekonote.ui.material3.components.SegmentedListItem
+import top.youzix.nekonote.ui.material3.components.StatusTag
 
 /**
  * 笔记 — the note list, Material flavour.
@@ -301,14 +302,33 @@ private fun NoteRow(note: Note, onClick: () -> Unit, onLongClick: () -> Unit) {
                             )
                         }
                         Text(
-                            text = NoteDate.relative(note.updatedAt) +
-                                " · ${note.charCount} 字" +
-                                if (note.tags.isEmpty()) "" else "  " + note.tags.joinToString(" ") { "#$it" },
+                            text = NoteDate.relative(note.updatedAt) + " · ${note.charCount} 字",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
+                        if (note.tags.isNotEmpty()) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                note.tags.take(3).forEach { tag ->
+                                    StatusTag(
+                                        label = tagLabel(tag),
+                                        backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
+                                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    )
+                                }
+                                if (note.tags.size > 3) {
+                                    Text(
+                                        text = "+${note.tags.size - 3}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                        }
                     }
                 },
                 leadingContent = {
@@ -335,3 +355,7 @@ private fun TagChip(label: String, selected: Boolean, onClick: () -> Unit) {
         ),
     )
 }
+
+/** Keeps a long tag from pushing the rest of the row off the card. */
+private fun tagLabel(tag: String): String =
+    if (tag.length <= 12) "#$tag" else "#${tag.take(11)}…"

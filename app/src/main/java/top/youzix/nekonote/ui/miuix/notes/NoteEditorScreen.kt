@@ -6,6 +6,7 @@
 package top.youzix.nekonote.ui.miuix.notes
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,6 +48,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -62,14 +64,14 @@ import top.youzix.nekonote.markdown.MarkdownHighlightColors
 import top.youzix.nekonote.markdown.MarkdownVisualTransformation
 import top.youzix.nekonote.ui.AppIcons
 import top.youzix.nekonote.ui.miuix.components.BlurredBar
+import top.youzix.nekonote.ui.miuix.components.StatusTag
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
-import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Surface
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TopAppBar
+import top.yukonga.miuix.kmp.basic.SmallTopAppBar
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
@@ -97,13 +99,15 @@ fun NoteEditorScreen(
     var body by rememberSaveable(noteId, stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(stored?.body.orEmpty()))
     }
+    var tagsText by rememberSaveable(noteId) {
+        mutableStateOf(Markdown.formatTags(stored?.tags.orEmpty()))
+    }
     var preview by rememberSaveable(noteId) { mutableStateOf(AppState.previewFirst) }
     var formatMode by rememberSaveable(noteId) { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var deleted by remember { mutableStateOf(false) }
 
-    val scrollBehavior = MiuixScrollBehavior()
     val highlightColors = MarkdownHighlightColors(
         syntax = colorScheme.primary,
         heading = colorScheme.onSurface,
@@ -117,16 +121,19 @@ fun NoteEditorScreen(
     val highlight = remember(highlightColors) { MarkdownVisualTransformation(highlightColors) }
     val latestTitle = rememberUpdatedState(title)
     val latestBody = rememberUpdatedState(body.text)
+    val latestTags = rememberUpdatedState(tagsText)
     val latestDeleted = rememberUpdatedState(deleted)
 
-    fun store(newTitle: String, newBody: String) {
-        if (!deleted) NoteRepository.touch(noteId, newTitle, newBody)
+    fun store(newTitle: String, newBody: String, newTags: List<String>) {
+        if (!deleted) NoteRepository.touch(noteId, newTitle, newBody, newTags)
     }
 
     // Typing pauses, then the file follows the memory list.
-    LaunchedEffect(title, body.text) {
+    LaunchedEffect(title, body.text, tagsText) {
         if (deleted) return@LaunchedEffect
-        if (title.isBlank() && body.text.isBlank()) return@LaunchedEffect
+        if (title.isBlank() && body.text.isBlank() && Markdown.parseTags(tagsText).isEmpty()) {
+            return@LaunchedEffect
+        }
         delay(700)
         NoteRepository.persist()
     }
@@ -137,10 +144,11 @@ fun NoteEditorScreen(
             if (latestDeleted.value) return@onDispose
             val finalTitle = latestTitle.value
             val finalBody = latestBody.value
-            if (finalTitle.isBlank() && finalBody.isBlank()) {
+            val finalTags = Markdown.parseTags(latestTags.value)
+            if (finalTitle.isBlank() && finalBody.isBlank() && finalTags.isEmpty()) {
                 NoteRepository.delete(noteId)
             } else {
-                NoteRepository.touch(noteId, finalTitle, finalBody)
+                NoteRepository.touch(noteId, finalTitle, finalBody, finalTags)
                 NoteRepository.persist()
             }
         }
@@ -149,11 +157,12 @@ fun NoteEditorScreen(
     fun finish() {
         val finalTitle = title
         val finalBody = body.text
+        val finalTags = Markdown.parseTags(tagsText)
         if (!deleted) {
-            if (finalTitle.isBlank() && finalBody.isBlank()) {
+            if (finalTitle.isBlank() && finalBody.isBlank() && finalTags.isEmpty()) {
                 NoteRepository.delete(noteId)
             } else {
-                NoteRepository.touch(noteId, finalTitle, finalBody)
+                NoteRepository.touch(noteId, finalTitle, finalBody, finalTags)
                 NoteRepository.persist()
             }
         }
@@ -162,7 +171,7 @@ fun NoteEditorScreen(
 
     fun format(transform: (TextFieldValue) -> TextFieldValue) {
         body = transform(body)
-        store(title, body.text)
+        store(title, body.text, Markdown.parseTags(tagsText))
     }
 
     fun apply(action: EditorAction) {
@@ -187,22 +196,15 @@ fun NoteEditorScreen(
     val toolbarInset = if (imeBottom > 0.dp) 0.dp else navigationBottom
 
     val createdAt = stored?.createdAt ?: System.currentTimeMillis()
-    val tags = Markdown.tagsOf(body.text)
-    val metaText = buildString {
-        append(NoteDate.full(createdAt))
-        append(" · ")
-        append(Markdown.charCount(body.text))
-        append(" 字")
-        if (tags.isNotEmpty()) {
-            append(" · ")
-            tags.forEach { tag -> append('#').append(tag).append(' ') }
-        }
-    }.trimEnd()
+    val tags = Markdown.parseTags(tagsText)
+    val metaText = "${NoteDate.full(createdAt)} · ${Markdown.charCount(body.text)} 字"
 
     val titleStyle = MiuixTheme.textStyles.title2.copy(
         fontSize = 26.sp,
+        fontWeight = FontWeight.Bold,
         color = colorScheme.onSurfaceVariantSummary,
     )
+    val tagStyle = MiuixTheme.textStyles.footnote1.copy(color = colorScheme.primary)
     val metaStyle = MiuixTheme.textStyles.footnote2
     val bodyStyle = TextStyle(
         fontFamily = FontFamily.Monospace,
@@ -220,10 +222,9 @@ fun NoteEditorScreen(
         containerColor = colorScheme.surface,
         topBar = {
             BlurredBar(backdrop = null) {
-                TopAppBar(
-                    title = if (preview) "预览" else "编辑",
+                SmallTopAppBar(
+                    title = "",
                     color = colorScheme.surface,
-                    scrollBehavior = scrollBehavior,
                     navigationIcon = {
                         IconButton(onClick = { finish() }) {
                             Icon(AppIcons.Back, "返回")
@@ -280,6 +281,24 @@ fun NoteEditorScreen(
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
+                    if (tags.isNotEmpty()) {
+                        Spacer(Modifier.height(6.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            tags.forEach { tag ->
+                                StatusTag(
+                                    label = tagLabel(tag),
+                                    backgroundColor = colorScheme.secondaryContainer,
+                                    contentColor = colorScheme.onSecondaryContainer,
+                                )
+                            }
+                        }
+                    }
                     Spacer(Modifier.height(4.dp))
                     Text(
                         text = metaText,
@@ -297,7 +316,7 @@ fun NoteEditorScreen(
                     value = title,
                     onValueChange = {
                         title = it
-                        store(it, body.text)
+                        store(it, body.text, Markdown.parseTags(tagsText))
                     },
                     singleLine = true,
                     textStyle = titleStyle,
@@ -316,7 +335,31 @@ fun NoteEditorScreen(
                         }
                     },
                 )
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(2.dp))
+                BasicTextField(
+                    value = tagsText,
+                    onValueChange = {
+                        tagsText = it
+                        store(title, body.text, Markdown.parseTags(it))
+                    },
+                    singleLine = true,
+                    textStyle = tagStyle,
+                    cursorBrush = SolidColor(colorScheme.primary),
+                    modifier = Modifier.fillMaxWidth(),
+                    decorationBox = { innerTextField ->
+                        Box {
+                            if (tagsText.isEmpty()) {
+                                Text(
+                                    text = "添加标签…",
+                                    style = tagStyle,
+                                    color = colorScheme.onSurfaceVariantSummary,
+                                )
+                            }
+                            innerTextField()
+                        }
+                    },
+                )
+                Spacer(Modifier.height(2.dp))
                 Text(
                     text = metaText,
                     style = metaStyle,
@@ -329,7 +372,7 @@ fun NoteEditorScreen(
                     value = body,
                     onValueChange = {
                         body = it
-                        store(title, it.text)
+                        store(title, it.text, Markdown.parseTags(tagsText))
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -364,7 +407,7 @@ fun NoteEditorScreen(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     onClick = {
-                        store(title, body.text)
+                        store(title, body.text, Markdown.parseTags(tagsText))
                         NoteRepository.togglePin(noteId)
                         onNotify(if (pinned) "已取消置顶" else "已置顶")
                         showMenu = false
@@ -509,3 +552,7 @@ private enum class EditorAction {
     Strike,
     InlineCode,
 }
+
+/** Keeps a long tag from pushing the rest of the row off the card. */
+private fun tagLabel(tag: String): String =
+    if (tag.length <= 12) "#$tag" else "#${tag.take(11)}…"

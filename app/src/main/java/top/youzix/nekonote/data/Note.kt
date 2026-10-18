@@ -10,14 +10,15 @@ import top.youzix.nekonote.markdown.Markdown
 /**
  * One note.
  *
- * [body] is the Markdown source and the only thing the user really owns: the title is a separate
- * field so a note can be called something other than its first heading, and tags are read straight
- * out of the body (`#标签`) instead of being a second store that could drift.
+ * [body] is the Markdown source, the title is a separate field, and [tags] is an explicit list
+ * edited on its own line under the title. Tags used to be read out of the body; old files still
+ * migrate that way (see the repository's decoder), but new edits write the list directly.
  */
 data class Note(
     val id: String,
     val title: String,
     val body: String,
+    val tags: List<String> = emptyList(),
     val pinned: Boolean = false,
     val createdAt: Long = 0L,
     val updatedAt: Long = 0L,
@@ -26,9 +27,6 @@ data class Note(
     val displayTitle: String
         get() = title.ifBlank { Markdown.titleOf(body) }.ifBlank { "未命名笔记" }
 
-    /** Tags written in the body as `#标签`, in the order they first appear. */
-    val tags: List<String> get() = Markdown.tagsOf(body)
-
     /** A few lines of the body with the markup taken out, for the list. */
     val excerpt: String get() = Markdown.excerptOf(body)
 
@@ -36,7 +34,7 @@ data class Note(
     val charCount: Int get() = Markdown.charCount(body)
 
     /** A draft that has never been typed into. */
-    val isBlank: Boolean get() = title.isBlank() && body.isBlank()
+    val isBlank: Boolean get() = title.isBlank() && body.isBlank() && tags.isEmpty()
 }
 
 /** How the note list is ordered below the pinned notes. */

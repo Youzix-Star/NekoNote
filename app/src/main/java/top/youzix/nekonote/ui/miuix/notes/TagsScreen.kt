@@ -48,8 +48,9 @@ import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 /**
  * 标签 — the other way into the notes: by tag, by pinned, by recency.
  *
- * Tags are read out of the note bodies ([top.youzix.nekonote.markdown.Markdown.tagsOf]), so there
- * is no tag manager to keep in sync; tapping one hands the filter to the notes tab.
+ * Tags live on the note itself ([top.youzix.nekonote.data.Note.tags]) and are edited on the line
+ * under the note title; old files are migrated from body hashtags once. Tapping one hands the
+ * filter to the notes tab.
  */
 @Composable
 fun TagsScreen(
