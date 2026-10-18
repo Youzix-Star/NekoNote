@@ -9,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,9 +21,9 @@ import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -46,12 +47,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
@@ -74,6 +75,7 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.SmallTopAppBar
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
 
 /**
@@ -191,9 +193,7 @@ fun NoteEditorScreen(
         }
     }
 
-    val imeBottom = WindowInsets.ime.asPaddingValues().calculateBottomPadding()
-    val navigationBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    val toolbarInset = if (imeBottom > 0.dp) 0.dp else navigationBottom
+    val keyboardVisible = WindowInsets.ime.asPaddingValues().calculateBottomPadding() > 0.dp
 
     val createdAt = stored?.createdAt ?: System.currentTimeMillis()
     val tags = Markdown.parseTags(tagsText)
@@ -206,10 +206,13 @@ fun NoteEditorScreen(
     )
     val tagStyle = MiuixTheme.textStyles.footnote1.copy(color = colorScheme.primary)
     val metaStyle = MiuixTheme.textStyles.footnote2
+    val bodyLineHeight = (AppState.editorTextSize.bodySp * 1.7f).sp
+    val bodyLineHeightDp = with(LocalDensity.current) { bodyLineHeight.toDp() }
+    val bodyScroll = rememberScrollState()
     val bodyStyle = TextStyle(
         fontFamily = FontFamily.Monospace,
         fontSize = AppState.editorTextSize.bodySp.sp,
-        lineHeight = (AppState.editorTextSize.bodySp * 1.7f).sp,
+        lineHeight = bodyLineHeight,
         color = colorScheme.onSurface,
     )
     val bodyPlaceholderStyle = MiuixTheme.textStyles.body1.copy(
@@ -246,10 +249,10 @@ fun NoteEditorScreen(
             }
         },
         bottomBar = {
-            if (!preview) {
+            // The formatting pill belongs to the keyboard: no keyboard, no rail.
+            if (!preview && keyboardVisible) {
                 FloatingFormatBar(
                     formatMode = formatMode,
-                    bottomInset = toolbarInset,
                     onToggleFormatMode = { formatMode = !formatMode },
                     onAction = { apply(it) },
                 )
@@ -263,7 +266,7 @@ fun NoteEditorScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .then(if (preview) Modifier.navigationBarsPadding() else Modifier)
+                .then(if (preview || !keyboardVisible) Modifier.navigationBarsPadding() else Modifier)
                 .padding(horizontal = 20.dp),
         ) {
             Spacer(Modifier.height(8.dp))
@@ -272,6 +275,7 @@ fun NoteEditorScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
+                        .scrollEndHaptic()
                         .verticalScroll(rememberScrollState()),
                 ) {
                     Text(
@@ -368,30 +372,45 @@ fun NoteEditorScreen(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Spacer(Modifier.height(8.dp))
-                BasicTextField(
-                    value = body,
-                    onValueChange = {
-                        body = it
-                        store(title, it.text, Markdown.parseTags(tagsText))
-                    },
+                BoxWithConstraints(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),
-                    textStyle = bodyStyle,
-                    cursorBrush = SolidColor(colorScheme.primary),
-                    visualTransformation = highlight,
-                    decorationBox = { innerTextField ->
-                        Box {
-                            if (body.text.isEmpty()) {
-                                Text(
-                                    text = "开始书写…",
-                                    style = bodyPlaceholderStyle,
-                                )
-                            }
-                            innerTextField()
-                        }
-                    },
-                )
+                ) {
+                    val minimumFieldHeight = (maxHeight - 8.dp).coerceAtLeast(bodyLineHeightDp)
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .scrollEndHaptic()
+                            .verticalScroll(bodyScroll)
+                            .padding(bottom = 8.dp),
+                    ) {
+                        BasicTextField(
+                            value = body,
+                            onValueChange = {
+                                body = it
+                                store(title, it.text, Markdown.parseTags(tagsText))
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = minimumFieldHeight),
+                            textStyle = bodyStyle,
+                            cursorBrush = SolidColor(colorScheme.primary),
+                            visualTransformation = highlight,
+                            decorationBox = { innerTextField ->
+                                Box {
+                                    if (body.text.isEmpty()) {
+                                        Text(
+                                            text = "开始书写…",
+                                            style = bodyPlaceholderStyle,
+                                        )
+                                    }
+                                    innerTextField()
+                                }
+                            },
+                        )
+                    }
+                }
             }
         }
     }
@@ -472,7 +491,6 @@ fun NoteEditorScreen(
 @Composable
 private fun FloatingFormatBar(
     formatMode: Boolean,
-    bottomInset: Dp,
     onToggleFormatMode: () -> Unit,
     onAction: (EditorAction) -> Unit,
 ) {
@@ -480,7 +498,7 @@ private fun FloatingFormatBar(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
-            .padding(bottom = bottomInset + 10.dp),
+            .padding(bottom = 10.dp),
         contentAlignment = Alignment.Center,
     ) {
         Surface(
