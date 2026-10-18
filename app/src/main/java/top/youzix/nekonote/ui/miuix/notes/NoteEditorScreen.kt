@@ -472,7 +472,7 @@ private fun FloatingFormatBar(
                         modifier = Modifier
                             .width(1.dp)
                             .height(22.dp)
-                            .background(colorScheme.outlineVariant),
+                            .background(colorScheme.dividerLine),
                     )
                     ToolIcon(AppIcons.Close, "收起格式", onToggleFormatMode)
                 }
