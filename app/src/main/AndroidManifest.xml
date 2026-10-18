@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 检查更新要访问 GitHub Releases -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:name=".NekoNoteApp"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:enableOnBackInvokedCallback="true"
+        android:theme="@style/Theme.Neko">
+
+        <!--
+          The crash report screen. `:crash` matters: the main process is dying when this opens, and
+          the report has to outlive it. It falls back to plain views, so it cannot fail the way the
+          app just did.
+        -->
+        <activity
+            android:name=".crash.CrashReportActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:process=":crash"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+
+        <!--
+          adjustNothing: the window is never resized or panned for the keyboard, so the layout
+          cannot be pushed around by it — the floating bottom bar in particular has to stay on the
+          bottom edge.
+        -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode"
+            android:windowSoftInputMode="adjustNothing"
+            android:theme="@style/Theme.Neko">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+    </application>
+</manifest>
